@@ -214,6 +214,14 @@ body {
 .log .entry.red { color: #ffa6a1; }
 .log .entry.sys { color: #c9c9c9; font-style: italic; }
 
+/* ---------- Окно подтверждения ---------- */
+.modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.55); align-items: center; justify-content: center; z-index: 10; padding: 20px; }
+.modal.open { display: flex; }
+.modal-box { text-align: center; min-width: 280px; }
+.modal-box p { font-size: 20px; margin: 0 0 22px; }
+.modal-buttons { display: flex; gap: 12px; }
+.modal-buttons .btn { flex: 1; }
+
 /* ---------- Победа ---------- */
 .victory { text-align: center; min-width: 380px; }
 .victory h2 { font-size: 42px; margin: 0 0 10px; }
@@ -364,6 +372,17 @@ body {
       </div>
     </div>
   </section>
+
+  <!-- ОКНО ПОДТВЕРЖДЕНИЯ -->
+  <div class="modal" id="confirm">
+    <div class="panel modal-box">
+      <p id="confirm-text"></p>
+      <div class="modal-buttons">
+        <button class="btn" id="confirm-no">Отмена</button>
+        <button class="btn primary" id="confirm-yes">Да</button>
+      </div>
+    </div>
+  </div>
 
   <script>
 'use strict';
@@ -1090,6 +1109,18 @@ function leaveGame() {
   showScreen('menu');
 }
 
+// Своё окно подтверждения (системный confirm() блокируется во встроенных просмотрщиках)
+let confirmAction = null;
+function askConfirm(text, onYes) {
+  confirmAction = onYes;
+  document.getElementById('confirm-text').textContent = text;
+  document.getElementById('confirm').classList.add('open');
+}
+function closeConfirm() {
+  confirmAction = null;
+  document.getElementById('confirm').classList.remove('open');
+}
+
 function syncSetupButtons() {
   document.querySelectorAll('.opt-group').forEach(g => {
     const key = g.dataset.opt;
@@ -1119,15 +1150,18 @@ function init() {
   document.getElementById('btn-victory-menu').onclick = () => showScreen('menu');
   document.getElementById('btn-to-menu').onclick = () => {
     if (state && state.over) return leaveGame();
-    if (confirm('Выйти в меню? Текущая партия будет потеряна.')) leaveGame();
+    askConfirm('Выйти в меню? Текущая партия будет потеряна.', leaveGame);
   };
   document.getElementById('btn-surrender').onclick = () => {
     if (!state || state.over || state.busy) return;
     const loser = state.mode === 'ai' ? opponent(state.aiColor) : state.turn;
-    if (confirm(state.mode === 'ai' ? 'Сдаться?' : `${NAMES[loser]} сдаются?`)) {
-      finishGame(opponent(loser), `${name(loser)} сдались.`);
-    }
+    const gid = state.gameId;
+    askConfirm(state.mode === 'ai' ? 'Сдаться?' : `${NAMES[loser]} сдаются?`, () => {
+      if (state && state.gameId === gid && !state.over) finishGame(opponent(loser), `${name(loser)} сдались.`);
+    });
   };
+  document.getElementById('confirm-no').onclick = () => closeConfirm();
+  document.getElementById('confirm-yes').onclick = () => { const f = confirmAction; closeConfirm(); if (f) f(); };
 
   document.addEventListener('keydown', e => { if (e.key === 'Escape') cancelSelection(); });
   boardEl.addEventListener('contextmenu', e => { e.preventDefault(); cancelSelection(); });
