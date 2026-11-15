@@ -12,7 +12,6 @@
   --blue-dark: #1d4596;
   --red: #e0413a;
   --red-dark: #8f201b;
-  --gold: #e8b923;
   --bg: #1b1d24;
   --panel: #262934;
   --text: #eef0f5;
@@ -43,8 +42,8 @@ body {
   transition: transform .1s, background .2s;
 }
 .btn:hover { background: #4a5066; transform: translateY(-1px); }
-.btn.primary { background: linear-gradient(90deg, var(--blue), var(--red)); }
-.btn.primary:hover { filter: brightness(1.1); }
+.btn.primary { background: #5b63d6; }
+.btn.primary:hover { background: #6d75e8; }
 .btn.small { padding: 8px 18px; font-size: 14px; }
 
 .panel {
@@ -58,19 +57,36 @@ body {
 /* ---------- Меню ---------- */
 .logo {
   font-size: 72px;
-  margin: 0;
+  margin: 0 0 44px;
   letter-spacing: 4px;
-  background: linear-gradient(90deg, var(--blue), var(--red));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: #e9ebff;
+  text-shadow: 0 4px 30px rgba(120,130,255,.35);
 }
-.subtitle { opacity: .7; margin: 8px 0 40px; font-size: 18px; }
-.menu-buttons { display: flex; flex-direction: column; gap: 14px; min-width: 240px; }
+.menu-buttons { display: flex; flex-direction: column; gap: 14px; min-width: 260px; }
 
-.rules h2 { margin-top: 0; }
+.rules h2, .setup h2 { margin-top: 0; }
 .rules li { margin: 6px 0; line-height: 1.45; }
 .rules .hint { opacity: .7; font-size: 14px; }
+
+/* ---------- Настройка игры с ИИ ---------- */
+.setup { min-width: 420px; }
+.opt-title { font-size: 14px; opacity: .7; text-transform: uppercase; letter-spacing: 1px; margin: 18px 0 8px; }
+.opt-group { display: flex; gap: 8px; flex-wrap: wrap; }
+.opt {
+  flex: 1;
+  background: #333746;
+  color: var(--text);
+  border: 2px solid transparent;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 15px;
+  cursor: pointer;
+}
+.opt:hover { background: #3d4254; }
+.opt.active { border-color: #8f96ff; background: #3d4270; }
+.opt small { display: block; opacity: .6; font-size: 12px; margin-top: 2px; }
+.setup .menu-buttons { margin-top: 26px; flex-direction: row; }
+.setup .menu-buttons .btn { flex: 1; }
 
 /* ---------- Игра ---------- */
 .game-layout { display: flex; gap: 24px; align-items: flex-start; }
@@ -90,6 +106,7 @@ body {
 .player-panel.blue.active { border-color: var(--blue); box-shadow: 0 0 24px rgba(47,111,228,.5); }
 .player-panel.red.active { border-color: var(--red); box-shadow: 0 0 24px rgba(224,65,58,.5); }
 .player-name { font-size: 20px; font-weight: bold; }
+.player-tag { font-size: 13px; opacity: .75; min-height: 17px; margin-top: 2px; }
 .player-panel.blue .player-name { color: #7fa8ff; }
 .player-panel.red .player-name { color: #ff8a84; }
 .score { font-size: 44px; font-weight: bold; margin: 8px 0 16px; }
@@ -97,6 +114,7 @@ body {
 .hand-label { font-size: 13px; opacity: .6; text-transform: uppercase; letter-spacing: 1px; }
 .hand { min-height: calc(var(--cell) + 8px); display: flex; justify-content: center; align-items: center; margin-top: 6px; }
 .hand .empty { opacity: .35; font-size: 14px; }
+.hand .card { width: var(--cell); height: var(--cell); }
 
 .turn-indicator {
   font-size: 22px;
@@ -106,6 +124,7 @@ body {
 }
 .turn-indicator.blue { background: var(--blue); }
 .turn-indicator.red { background: var(--red); }
+.turn-indicator.thinking::after { content: " · думает…"; font-weight: normal; opacity: .85; }
 
 .board {
   display: grid;
@@ -140,14 +159,11 @@ body {
   text-shadow: 0 2px 3px rgba(0,0,0,.4);
   cursor: pointer;
   transition: transform .12s, box-shadow .12s;
-  animation: flip-in .3s ease;
 }
 .card:hover { transform: translateY(-2px); }
 .card.back {
-  background:
-    repeating-linear-gradient(45deg, #4a4f63 0 8px, #3d4254 8px 16px);
+  background: repeating-linear-gradient(45deg, #4a4f63 0 8px, #3d4254 8px 16px);
   border: 3px solid #5c627a;
-  animation: none;
 }
 .card.back:hover { border-color: #9aa1bd; }
 .card.blue { background: linear-gradient(145deg, var(--blue), var(--blue-dark)); }
@@ -157,6 +173,8 @@ body {
 .card.not-mine { cursor: default; }
 .card.not-mine:hover { transform: none; }
 
+.card.flip { animation: flip-in .35s ease; }
+.card.pop { animation: pop .3s ease; }
 .card.selected { box-shadow: 0 0 0 4px #fff, 0 0 18px #fff; transform: scale(1.04); }
 .card.vanish { animation: vanish .9s ease forwards; }
 
@@ -209,6 +227,10 @@ body {
   from { transform: rotateY(90deg); }
   to { transform: rotateY(0); }
 }
+@keyframes pop {
+  from { transform: scale(.3); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
 @keyframes vanish {
   0% { transform: rotateY(90deg); opacity: 1; }
   25% { transform: rotateY(0); opacity: 1; }
@@ -223,6 +245,7 @@ body {
   .score { margin: 0; font-size: 30px; }
   .card { font-size: 24px; }
   .hand { min-height: auto; }
+  .setup { min-width: 0; }
 }
   </style>
 </head>
@@ -231,10 +254,33 @@ body {
   <!-- МЕНЮ -->
   <section id="screen-menu" class="screen active">
     <h1 class="logo">Manducat</h1>
-    <p class="subtitle">Синие против Красных</p>
     <div class="menu-buttons">
-      <button class="btn primary" id="btn-new">Новая игра</button>
+      <button class="btn primary" id="btn-vs-ai">Играть против ИИ</button>
+      <button class="btn" id="btn-pvp">Играть вдвоём</button>
       <button class="btn" id="btn-rules">Правила</button>
+    </div>
+  </section>
+
+  <!-- НАСТРОЙКА ИГРЫ С ИИ -->
+  <section id="screen-setup" class="screen">
+    <div class="panel setup">
+      <h2>Игра против ИИ</h2>
+      <div class="opt-title">Ваш цвет</div>
+      <div class="opt-group" data-opt="color">
+        <button class="opt" data-value="blue">Синие<small>ходят первыми</small></button>
+        <button class="opt" data-value="red">Красные<small>ходят вторыми</small></button>
+        <button class="opt" data-value="random">Случайно<small>&nbsp;</small></button>
+      </div>
+      <div class="opt-title">Сложность</div>
+      <div class="opt-group" data-opt="difficulty">
+        <button class="opt" data-value="easy">Лёгкий<small>часто ошибается</small></button>
+        <button class="opt" data-value="normal">Средний<small>на 2 хода</small></button>
+        <button class="opt" data-value="hard">Сложный<small>на 3 хода</small></button>
+      </div>
+      <div class="menu-buttons">
+        <button class="btn" id="btn-setup-back">Назад</button>
+        <button class="btn primary" id="btn-setup-start">Начать</button>
+      </div>
     </div>
   </section>
 
@@ -268,10 +314,15 @@ body {
   <section id="screen-game" class="screen">
     <div class="game-layout">
       <aside class="player-panel blue" id="panel-blue">
-        <div class="player-name">Синие</div>
+        <div>
+          <div class="player-name">Синие</div>
+          <div class="player-tag" id="tag-blue"></div>
+        </div>
         <div class="score"><span id="score-blue">0</span><small> / <span class="win-score"></span></small></div>
-        <div class="hand-label">Рука</div>
-        <div class="hand" id="hand-blue"></div>
+        <div>
+          <div class="hand-label">Рука</div>
+          <div class="hand" id="hand-blue"></div>
+        </div>
       </aside>
 
       <main class="center">
@@ -284,10 +335,15 @@ body {
       </main>
 
       <aside class="player-panel red" id="panel-red">
-        <div class="player-name">Красные</div>
+        <div>
+          <div class="player-name">Красные</div>
+          <div class="player-tag" id="tag-red"></div>
+        </div>
         <div class="score"><span id="score-red">0</span><small> / <span class="win-score"></span></small></div>
-        <div class="hand-label">Рука</div>
-        <div class="hand" id="hand-red"></div>
+        <div>
+          <div class="hand-label">Рука</div>
+          <div class="hand" id="hand-red"></div>
+        </div>
       </aside>
     </div>
     <div class="log" id="log"></div>
@@ -327,7 +383,7 @@ const NAMES = { blue: 'Синие', red: 'Красные' };
 const NAMES_GEN = { blue: 'синих', red: 'красных' };
 const DIRS = [[0, 1], [0, -1], [1, 0], [-1, 0]];
 
-// ================== ПРАВИЛА ==================
+// ================== ПРАВИЛА (работают и для реального поля, и для симуляции ИИ) ==================
 function canBeat(attacker, target) {
   if (attacker === 'M' || target === 'M') return true;
   if (attacker === '1' && target === '8') return true;
@@ -343,10 +399,62 @@ const rc = i => [Math.floor(i / SIZE), i % SIZE];
 const idx = (r, c) => r * SIZE + c;
 const inside = (r, c) => r >= 0 && r < SIZE && c >= 0 && c < SIZE;
 const coordName = i => { const [r, c] = rc(i); return 'ABCDEF'[c] + (r + 1); };
-const cardLabel = card => (card.owner ? `${card.value} ${NAMES_GEN[card.owner]}` : card.value);
+
+// Клетка поля: null (пусто) | { owner, value, faceUp }
+function moveTargets(board, i) {
+  const [r, c] = rc(i);
+  const res = [];
+  for (const [dr, dc] of DIRS) {
+    const nr = r + dr, nc = c + dc;
+    if (inside(nr, nc) && board[idx(nr, nc)] === null) res.push(idx(nr, nc));
+  }
+  return res;
+}
+
+function attackTargets(board, i) {
+  const me = board[i];
+  const [r, c] = rc(i);
+  const res = [];
+  for (const [dr, dc] of DIRS) {
+    let nr = r + dr, nc = c + dc;
+    while (inside(nr, nc) && board[idx(nr, nc)] === null) { nr += dr; nc += dc; }
+    if (!inside(nr, nc)) continue;
+    const target = board[idx(nr, nc)];
+    if (target.faceUp && target.owner === opponent(me.owner) && canBeat(me.value, target.value)) {
+      res.push(idx(nr, nc));
+    }
+  }
+  return res;
+}
+
+function emptyCells(board) {
+  const res = [];
+  board.forEach((c, i) => { if (c === null) res.push(i); });
+  return res;
+}
+
+// Все возможные действия игрока
+function listActions(board, hand, player) {
+  const acts = [];
+  let hasEmpty = false;
+  for (let i = 0; i < board.length; i++) {
+    const c = board[i];
+    if (c === null) { hasEmpty = true; continue; }
+    if (!c.faceUp) { acts.push({ type: 'flip', i }); continue; }
+    if (c.owner !== player) continue;
+    for (const t of attackTargets(board, i)) acts.push({ type: 'attack', from: i, to: t });
+    for (const t of moveTargets(board, i)) acts.push({ type: 'move', from: i, to: t });
+  }
+  if (hand[player] > 0 && hasEmpty) {
+    for (let i = 0; i < board.length; i++) if (board[i] === null) acts.push({ type: 'place', i });
+  }
+  return acts;
+}
 
 // ================== СОСТОЯНИЕ ==================
 let state = null;
+let gameCounter = 0;
+let config = { mode: 'ai', color: 'blue', difficulty: 'normal' };
 
 function shuffle(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
@@ -364,87 +472,81 @@ function createDeck() {
     }
   }
   for (let k = 0; k < G_COUNT; k++) deck.push({ owner: null, value: 'G', faceUp: false });
-  while (deck.length < SIZE * SIZE) deck.push(null); // пустые клетки, если карт меньше 36
+  while (deck.length < SIZE * SIZE) deck.push(null);
   return shuffle(deck);
 }
 
-function newGame() {
+function newGame(cfg = config) {
+  config = { ...cfg };
+  let aiColor = null;
+  if (config.mode === 'ai') {
+    const human = config.color === 'random' ? (Math.random() < 0.5 ? 'blue' : 'red') : config.color;
+    aiColor = opponent(human);
+  }
   state = {
+    gameId: ++gameCounter,
+    mode: config.mode,
+    aiColor,
+    difficulty: config.difficulty,
     board: createDeck(),
     turn: 'blue',
     scores: { blue: 0, red: 0 },
     hand: { blue: 0, red: 0 },
+    graveyard: [],       // съеденные карты и собранные G (нужно ИИ, чтобы знать, что осталось в колоде)
     selected: null,      // {type:'cell', i} | {type:'hand'}
     busy: false,
     over: false,
     lastMove: [],
-    vanishing: null,     // индекс клетки с исчезающей картой (G / M)
+    lastAction: null,
+    vanishing: null,
+    aiThinking: false,
+    aiLastMove: null,
+    quiet: { blue: 0, red: 0 },   // ходов подряд без открытий и взятий
+    positions: {},                // сколько раз встречалась позиция (против бесконечного топтания)
     log: [],
   };
-  addLog('sys', 'Новая игра. Ходят Синие.');
+  rememberPosition();
+  addLog('sys', `Новая игра. Ходят ${name('blue')}.`);
   showScreen('game');
   render();
+  maybeAiTurn();
 }
 
-// ================== ВОЗМОЖНЫЕ ДЕЙСТВИЯ ==================
-function moveTargets(i) {
-  const [r, c] = rc(i);
-  const res = [];
-  for (const [dr, dc] of DIRS) {
-    const nr = r + dr, nc = c + dc;
-    if (inside(nr, nc) && state.board[idx(nr, nc)] === null) res.push(idx(nr, nc));
-  }
-  return res;
-}
+const isAiTurn = () => state && state.mode === 'ai' && state.turn === state.aiColor;
 
-function attackTargets(i) {
-  const me = state.board[i];
-  const [r, c] = rc(i);
-  const res = [];
-  for (const [dr, dc] of DIRS) {
-    let nr = r + dr, nc = c + dc;
-    while (inside(nr, nc) && state.board[idx(nr, nc)] === null) { nr += dr; nc += dc; }
-    if (!inside(nr, nc)) continue;
-    const target = state.board[idx(nr, nc)];
-    if (target.faceUp && target.owner === opponent(me.owner) && canBeat(me.value, target.value)) {
-      res.push(idx(nr, nc));
-    }
-  }
-  return res;
-}
-
-function emptyCells() {
-  return state.board.map((c, i) => (c === null ? i : -1)).filter(i => i >= 0);
-}
-
-function hasAnyAction(player) {
-  const b = state.board;
-  if (b.some(c => c && !c.faceUp)) return true;
-  if (state.hand[player] > 0 && emptyCells().length > 0) return true;
-  for (let i = 0; i < b.length; i++) {
-    const c = b[i];
-    if (c && c.faceUp && c.owner === player && (moveTargets(i).length || attackTargets(i).length)) return true;
-  }
-  return false;
+function name(p) {
+  if (state && state.mode === 'ai') return NAMES[p] + (p === state.aiColor ? ' (ИИ)' : ' (вы)');
+  return NAMES[p];
 }
 
 // ================== ДЕЙСТВИЯ ==================
+function doAction(a) {
+  switch (a.type) {
+    case 'flip': return flipCard(a.i);
+    case 'move': return moveCard(a.from, a.to);
+    case 'attack': return attack(a.from, a.to);
+    case 'place': return playM(a.i);
+  }
+}
+
 function flipCard(i) {
   const card = state.board[i];
   const p = state.turn;
   card.faceUp = true;
   state.lastMove = [i];
+  state.lastAction = 'flip';
 
   if (card.value === 'G') {
     state.scores[p] += G_POINTS;
-    addLog(p, `${NAMES[p]} открыли ${coordName(i)}: G! +${G_POINTS} очка.`);
+    state.graveyard.push({ owner: null, value: 'G' });
+    addLog(p, `${name(p)} открыли ${coordName(i)}: G! +${G_POINTS} очка.`);
     vanishThenEnd(i);
   } else if (card.value === 'M') {
     state.hand[card.owner]++;
-    addLog(p, `${NAMES[p]} открыли ${coordName(i)}: M ${NAMES_GEN[card.owner]} — уходит в руку ${NAMES[card.owner] === NAMES[p] ? 'себе' : 'сопернику'}.`);
+    addLog(p, `${name(p)} открыли ${coordName(i)}: M ${NAMES_GEN[card.owner]} — уходит в руку ${card.owner === p ? 'себе' : 'сопернику'}.`);
     vanishThenEnd(i);
   } else {
-    addLog(p, `${NAMES[p]} открыли ${coordName(i)}: ${cardLabel(card)}.`);
+    addLog(p, `${name(p)} открыли ${coordName(i)}: ${card.value} ${NAMES_GEN[card.owner]}.`);
     endTurn();
   }
 }
@@ -452,8 +554,11 @@ function flipCard(i) {
 function vanishThenEnd(i) {
   state.busy = true;
   state.vanishing = i;
+  state.selected = null;
   render();
+  const gid = state.gameId;
   setTimeout(() => {
+    if (!state || state.gameId !== gid) return;
     state.board[i] = null;
     state.vanishing = null;
     state.busy = false;
@@ -467,7 +572,8 @@ function moveCard(from, to) {
   state.board[to] = card;
   state.board[from] = null;
   state.lastMove = [from, to];
-  addLog(p, `${NAMES[p]}: ${card.value} ${coordName(from)} → ${coordName(to)}.`);
+  state.lastAction = 'move';
+  addLog(p, `${name(p)}: ${card.value} ${coordName(from)} → ${coordName(to)}.`);
   endTurn();
 }
 
@@ -477,10 +583,12 @@ function attack(from, to) {
   const victim = state.board[to];
   const pts = cardPoints(victim.value);
   state.scores[p] += pts;
+  state.graveyard.push({ owner: victim.owner, value: victim.value });
   state.board[to] = me;
   state.board[from] = null;
   state.lastMove = [from, to];
-  addLog(p, `${NAMES[p]}: ${me.value} (${coordName(from)}) съедает ${victim.value} на ${coordName(to)}. +${pts}.`);
+  state.lastAction = 'attack';
+  addLog(p, `${name(p)}: ${me.value} (${coordName(from)}) съедает ${victim.value} на ${coordName(to)}. +${pts}.`);
   endTurn();
 }
 
@@ -489,81 +597,369 @@ function playM(i) {
   state.hand[p]--;
   state.board[i] = { owner: p, value: 'M', faceUp: true };
   state.lastMove = [i];
-  addLog(p, `${NAMES[p]} выкладывают M на ${coordName(i)}.`);
+  state.lastAction = 'place';
+  addLog(p, `${name(p)} выкладывают M на ${coordName(i)}.`);
   endTurn();
+}
+
+function positionKey(board, hand, turn) {
+  let k = turn[0] + hand.blue + hand.red;
+  for (const c of board) k += c === null ? '.' : !c.faceUp ? '#' : (c.owner ? c.owner[0] : '') + c.value + ',';
+  return k;
+}
+
+function rememberPosition() {
+  const k = positionKey(state.board, state.hand, state.turn);
+  state.positions[k] = (state.positions[k] || 0) + 1;
 }
 
 function endTurn() {
   state.selected = null;
+  const mover = state.turn;
+  state.quiet[mover] = state.lastAction === 'move' ? state.quiet[mover] + 1 : 0;
 
   for (const p of PLAYERS) {
     if (state.scores[p] >= WIN_SCORE) {
-      return finishGame(p, `${NAMES[p]} набрали ${state.scores[p]} очков.`);
+      return finishGame(p, `${name(p)} набрали ${state.scores[p]} очков.`);
     }
   }
 
   state.turn = opponent(state.turn);
-  if (!hasAnyAction(state.turn)) {
+  rememberPosition();
+  if (listActions(state.board, state.hand, state.turn).length === 0) {
     const loser = state.turn;
     return finishGame(opponent(loser), `У ${NAMES_GEN[loser]} не осталось ходов — поражение.`);
   }
   render();
+  maybeAiTurn();
 }
 
 function finishGame(winner, reason) {
   state.over = true;
+  state.aiThinking = false;
   render();
   const title = document.getElementById('victory-title');
   title.className = winner || '';
-  title.textContent = winner ? `Победили ${NAMES[winner]}!` : 'Ничья!';
+  if (state.mode === 'ai') {
+    title.textContent = winner === state.aiColor ? 'ИИ победил' : 'Победа!';
+  } else {
+    title.textContent = `Победили ${NAMES[winner]}!`;
+  }
   document.getElementById('victory-reason').textContent = reason;
   document.getElementById('final-blue').textContent = state.scores.blue;
   document.getElementById('final-red').textContent = state.scores.red;
-  setTimeout(() => showScreen('victory'), 400);
+  const gid = state.gameId;
+  setTimeout(() => { if (state && state.gameId === gid) showScreen('victory'); }, 700);
+}
+
+// =====================================================================
+// ================================ ИИ =================================
+// =====================================================================
+//
+// ИИ не подглядывает: закрытые карты для него неизвестны. Он знает только
+// состав колоды и вычитает из него всё, что уже видел (открытые карты,
+// M в руках, съеденные карты, собранные G). Открытие закрытой карты — это
+// «случайное событие», которое он усредняет по вероятностям оставшихся карт.
+//
+// Поиск — expectimax: ход ИИ (максимум) → ответ соперника (минимум) → ...
+// → оценка позиции. Открытия считаются как среднее по всем исходам.
+
+const HIDDEN = Object.freeze({ faceUp: false });
+
+const POOL_KEYS = [];
+const KEY_CARD = {};
+for (const owner of PLAYERS) for (const [v] of ARMY) {
+  POOL_KEYS.push(owner + v);
+  KEY_CARD[owner + v] = { owner, value: v };
+}
+POOL_KEYS.push('G');
+KEY_CARD.G = { owner: null, value: 'G' };
+const keyOf = (owner, value) => (owner ? owner + value : 'G');
+
+const DIFFICULTY = {
+  easy:   { depth: 1, noise: 5,    deepen: 0 },
+  normal: { depth: 2, noise: 0.3,  deepen: 0 },
+  hard:   { depth: 2, noise: 0,    deepen: 8, beam: 8, budgetMs: 1500, maxHidden: 18 },
+};
+
+// Веса оценки
+const W = {
+  // «боевая ценность» открытой карты на поле (может есть других)
+  power: { '1': 1.0, '2': 0.5, '3': 0.8, '5': 1.3, '8': 2.0, 'M': 2.5 },
+  handM: 2.5,         // M в руке — можно выложить куда угодно
+  tmThreat: 0.85,     // взятие, доступное тому, кто сейчас ходит (почти гарантировано)
+  otherThreat: 0.35,  // угроза от того, кто не ходит (соперник успеет отреагировать)
+  approach: 0.25,     // тянуться к картам, которые можем съесть
+  winRush: 12,        // насколько сильно ценить очки при приближении к победе
+  stall: 0.35,        // штраф за каждый «пустой» ход подряд
+  repeat: 1.5,        // штраф за повтор позиции
+};
+const WIN_VALUE = 1e6;
+
+// Ценность очков нелинейна: чем ближе к 39, тем дороже каждое очко
+function scoreValue(x) {
+  const r = Math.min(x, WIN_SCORE) / WIN_SCORE;
+  return x + W.winRush * r * r * r;
+}
+
+// Состояние «глазами ИИ»
+function makeBelief() {
+  const pool = {};
+  for (const owner of PLAYERS) for (const [v, n] of ARMY) pool[owner + v] = n;
+  pool.G = G_COUNT;
+  let hidden = 0;
+  const board = state.board.map(c => {
+    if (c === null) return null;
+    if (!c.faceUp) { hidden++; return HIDDEN; }
+    pool[keyOf(c.owner, c.value)]--;
+    return { owner: c.owner, value: c.value, faceUp: true };
+  });
+  for (const p of PLAYERS) pool[p + 'M'] -= state.hand[p];
+  for (const g of state.graveyard) pool[keyOf(g.owner, g.value)]--;
+  return {
+    board, pool, hidden,
+    scores: { ...state.scores },
+    hand: { ...state.hand },
+    turn: state.turn,
+  };
+}
+
+function simApply(s, a, key) {
+  const p = s.turn;
+  const n = {
+    board: s.board.slice(),
+    pool: s.pool,
+    hidden: s.hidden,
+    scores: { blue: s.scores.blue, red: s.scores.red },
+    hand: { blue: s.hand.blue, red: s.hand.red },
+    turn: opponent(p),
+  };
+  switch (a.type) {
+    case 'flip': {
+      n.pool = { ...s.pool };
+      n.pool[key]--;
+      n.hidden--;
+      const c = KEY_CARD[key];
+      if (c.value === 'G') { n.board[a.i] = null; n.scores[p] += G_POINTS; }
+      else if (c.value === 'M') { n.board[a.i] = null; n.hand[c.owner]++; }
+      else n.board[a.i] = { owner: c.owner, value: c.value, faceUp: true };
+      break;
+    }
+    case 'move':
+      n.board[a.to] = n.board[a.from];
+      n.board[a.from] = null;
+      break;
+    case 'attack':
+      n.scores[p] += cardPoints(n.board[a.to].value);
+      n.board[a.to] = n.board[a.from];
+      n.board[a.from] = null;
+      break;
+    case 'place':
+      n.hand[p]--;
+      n.board[a.i] = { owner: p, value: 'M', faceUp: true };
+      break;
+  }
+  return n;
+}
+
+// Статическая оценка позиции с точки зрения игрока me
+function evaluate(s, me) {
+  const opp = opponent(me);
+  if (s.scores[me] >= WIN_SCORE) return WIN_VALUE + s.scores[me];
+  if (s.scores[opp] >= WIN_SCORE) return -WIN_VALUE - s.scores[opp];
+
+  const b = s.board;
+  const sg = p => (p === me ? 1 : -1);
+  let v = scoreValue(s.scores[me]) - scoreValue(s.scores[opp]);
+  v += W.handM * (s.hand[me] - s.hand[opp]);
+
+  const gain = { blue: 0, red: 0 };   // лучшее доступное взятие (очки + выбитая боевая ценность)
+  const pts = { blue: 0, red: 0 };    // лучшее взятие в чистых очках
+  const open = [];
+  for (let i = 0; i < b.length; i++) {
+    const c = b[i];
+    if (!c || !c.faceUp) continue;
+    open.push(i);
+    v += sg(c.owner) * W.power[c.value];
+    for (const t of attackTargets(b, i)) {
+      const tv = b[t].value;
+      const g = cardPoints(tv) + W.power[tv];
+      if (g > gain[c.owner]) gain[c.owner] = g;
+      if (cardPoints(tv) > pts[c.owner]) pts[c.owner] = cardPoints(tv);
+    }
+  }
+
+  const tm = s.turn, other = opponent(tm);
+  // Тот, кто ходит, может прямо сейчас взятием дойти до победы
+  if (s.scores[tm] + pts[tm] >= WIN_SCORE) return sg(tm) * WIN_VALUE * 0.5;
+  // ...или есть шанс открыть G и победить
+  if (s.scores[tm] + G_POINTS >= WIN_SCORE && s.pool.G > 0 && s.hidden > 0) {
+    v += sg(tm) * (s.pool.G / s.hidden) * 40;
+  }
+
+  v += sg(tm) * W.tmThreat * gain[tm];
+  v += sg(other) * W.otherThreat * gain[other];
+
+  // Подтягиваться к тем, кого можем съесть (и не стоять рядом с теми, кто может съесть нас)
+  for (let x = 0; x < open.length; x++) {
+    const A = b[open[x]];
+    const [ar, ac] = rc(open[x]);
+    for (let y = 0; y < open.length; y++) {
+      const B = b[open[y]];
+      if (A.owner === B.owner || !canBeat(A.value, B.value)) continue;
+      const [br, bc] = rc(open[y]);
+      const d = Math.abs(ar - br) + Math.abs(ac - bc);
+      const aligned = ar === br || ac === bc ? 1 : 0.5;
+      v += sg(A.owner) * W.approach * aligned * (cardPoints(B.value) + 1) / (4 * (1 + d));
+    }
+  }
+  return v;
+}
+
+function terminal(s, me) {
+  const opp = opponent(me);
+  if (s.scores[me] >= WIN_SCORE) return WIN_VALUE + s.scores[me];
+  if (s.scores[opp] >= WIN_SCORE) return -WIN_VALUE - s.scores[opp];
+  return null;
+}
+
+function search(s, depth, me, opts) {
+  const t = terminal(s, me);
+  if (t !== null) return t;
+  if (depth === 0) return evaluate(s, me);
+
+  const actions = listActions(s.board, s.hand, s.turn);
+  if (actions.length === 0) return s.turn === me ? -WIN_VALUE : WIN_VALUE; // нет ходов = поражение
+  const maximize = s.turn === me;
+
+  let list = actions;
+  if (opts.beam && depth >= 2 && actions.length > opts.beam) {
+    list = actions
+      .map(a => ({ a, v: actionValue(s, a, 0, me, opts) }))
+      .sort((x, y) => (maximize ? y.v - x.v : x.v - y.v))
+      .slice(0, opts.beam)
+      .map(x => x.a);
+  }
+
+  let best = maximize ? -Infinity : Infinity;
+  for (const a of list) {
+    const v = actionValue(s, a, depth - 1, me, opts);
+    if (maximize ? v > best : v < best) best = v;
+  }
+  return best;
+}
+
+// Ценность действия; для открытия — среднее по всем возможным картам
+function actionValue(s, a, depth, me, opts) {
+  if (a.type !== 'flip') return search(simApply(s, a), depth, me, opts);
+  let total = 0, count = 0;
+  for (const k of POOL_KEYS) {
+    const n = s.pool[k];
+    if (n <= 0) continue;
+    count += n;
+    total += n * search(simApply(s, a, k), depth, me, opts);
+  }
+  return count ? total / count : evaluate(s, me);
+}
+
+function chooseAiAction(difficulty) {
+  const cfg = DIFFICULTY[difficulty] || DIFFICULTY.normal;
+  const s = makeBelief();
+  const me = s.turn;
+  const actions = listActions(s.board, s.hand, me);
+  if (actions.length === 1) return actions[0];
+
+  let scored = actions.map(a => ({ a, v: actionValue(s, a, cfg.depth - 1, me, {}) }));
+
+  // Сложный: лучшие кандидаты просчитываем на ход глубже
+  if (cfg.deepen && s.hidden <= cfg.maxHidden) {
+    scored.sort((x, y) => y.v - x.v);
+    const top = scored.slice(0, cfg.deepen);
+    const t0 = performance.now();
+    const done = [];
+    for (const x of top) {
+      // не выходим за бюджет времени (в начале партии вариантов очень много)
+      if (done.length > 0 && performance.now() - t0 > cfg.budgetMs) break;
+      if (Math.abs(x.v) < WIN_VALUE / 4) x.v = actionValue(s, x.a, 2, me, { beam: cfg.beam });
+      done.push(x);
+    }
+    scored = done;
+  }
+
+  const last = state.aiLastMove;
+  for (const x of scored) {
+    if (x.a.type === 'move' && Math.abs(x.v) < WIN_VALUE / 4) {
+      // не дёргать карту туда-обратно
+      if (last && x.a.from === last.to && x.a.to === last.from) x.v -= 0.5;
+      // чем дольше топчемся без открытий и взятий, тем сильнее тянет сделать что-то полезное
+      x.v -= W.stall * state.quiet[me];
+      // повтор уже встречавшейся позиции
+      const n = simApply(s, x.a);
+      const seen = state.positions[positionKey(n.board, n.hand, n.turn)] || 0;
+      x.v -= W.repeat * seen;
+    }
+    x.v += (Math.random() - 0.5) * cfg.noise;
+  }
+  scored.sort((x, y) => y.v - x.v);
+  return scored[0].a;
+}
+
+function maybeAiTurn() {
+  if (!state || state.over || state.busy || !isAiTurn()) return;
+  const gid = state.gameId;
+  const alive = () => state && state.gameId === gid && !state.over;
+  state.aiThinking = true;
+  render();
+  setTimeout(() => {
+    if (!alive()) return;
+    const a = chooseAiAction(state.difficulty);
+    state.aiThinking = false;
+    if (a.type === 'move' || a.type === 'attack') {
+      state.selected = { type: 'cell', i: a.from };
+      state.aiLastMove = a.type === 'move' ? { from: a.from, to: a.to } : null;
+    } else {
+      state.aiLastMove = null;
+      if (a.type === 'place') state.selected = { type: 'hand' };
+    }
+    render();
+    setTimeout(() => { if (alive()) doAction(a); }, a.type === 'flip' ? 200 : 550);
+  }, 350);
 }
 
 // ================== ВВОД ==================
 function onCellClick(i) {
-  if (!state || state.busy || state.over) return;
+  if (!state || state.busy || state.over || isAiTurn()) return;
   const card = state.board[i];
   const sel = state.selected;
   const p = state.turn;
 
-  // Выбрана M из руки — выкладываем на пустую клетку
   if (sel && sel.type === 'hand') {
     if (card === null) return playM(i);
     state.selected = null;
   }
 
-  // Выбрана карта на поле — двигаем или атакуем
   if (sel && sel.type === 'cell') {
-    if (moveTargets(sel.i).includes(i)) return moveCard(sel.i, i);
-    if (attackTargets(sel.i).includes(i)) return attack(sel.i, i);
+    if (moveTargets(state.board, sel.i).includes(i)) return moveCard(sel.i, i);
+    if (attackTargets(state.board, sel.i).includes(i)) return attack(sel.i, i);
     if (sel.i === i) { state.selected = null; return render(); }
   }
 
   if (card === null) { state.selected = null; return render(); }
-
   if (!card.faceUp) return flipCard(i);
 
-  if (card.owner === p) {
-    state.selected = { type: 'cell', i };
-  } else {
-    state.selected = null;
-  }
+  state.selected = card.owner === p ? { type: 'cell', i } : null;
   render();
 }
 
 function onHandClick(player) {
-  if (!state || state.busy || state.over) return;
+  if (!state || state.busy || state.over || isAiTurn()) return;
   if (player !== state.turn || state.hand[player] === 0) return;
-  if (state.selected && state.selected.type === 'hand') state.selected = null;
-  else state.selected = { type: 'hand' };
+  state.selected = state.selected && state.selected.type === 'hand' ? null : { type: 'hand' };
   render();
 }
 
 function cancelSelection() {
-  if (state && state.selected) { state.selected = null; render(); }
+  if (state && state.selected && !isAiTurn()) { state.selected = null; render(); }
 }
 
 // ================== ОТРИСОВКА ==================
@@ -575,25 +971,30 @@ function buildBoard() {
   for (let i = 0; i < SIZE * SIZE; i++) {
     const el = document.createElement('div');
     el.className = 'cell';
+    el.dataset.sig = '';
     el.addEventListener('click', () => onCellClick(i));
     boardEl.appendChild(el);
     cellEls.push(el);
   }
 }
 
-function makeCardEl(card, extra = []) {
+function makeCardEl(card) {
   const el = document.createElement('div');
   el.className = 'card';
   if (!card.faceUp) {
     el.classList.add('back');
   } else {
     el.textContent = card.value;
-    if (card.value === 'G') el.classList.add('gold');
-    else el.classList.add(card.owner);
+    el.classList.add(card.value === 'G' ? 'gold' : card.owner);
     if (card.value === 'M') el.classList.add('mcard');
   }
-  extra.forEach(c => el.classList.add(c));
   return el;
+}
+
+function cardSig(card, i) {
+  if (!card) return '';
+  const base = card.faceUp ? (card.owner || '') + card.value : 'back';
+  return base + (state.vanishing === i ? ':v' : '');
 }
 
 function render() {
@@ -601,31 +1002,46 @@ function render() {
   const sel = state.selected;
   let moves = [], attacks = [], placeTargets = [];
   if (sel && sel.type === 'cell') {
-    moves = moveTargets(sel.i);
-    attacks = attackTargets(sel.i);
+    moves = moveTargets(state.board, sel.i);
+    attacks = attackTargets(state.board, sel.i);
   } else if (sel && sel.type === 'hand') {
-    placeTargets = emptyCells();
+    placeTargets = emptyCells(state.board);
   }
 
   state.board.forEach((card, i) => {
     const el = cellEls[i];
-    el.className = 'cell';
-    el.innerHTML = '';
-    if (state.lastMove.includes(i)) el.classList.add('last-move');
-    if (moves.includes(i) || placeTargets.includes(i)) el.classList.add('move-target');
-    if (attacks.includes(i)) el.classList.add('attack-target');
-    if (!card) return;
+    el.classList.toggle('last-move', state.lastMove.includes(i));
+    el.classList.toggle('move-target', moves.includes(i) || placeTargets.includes(i));
+    el.classList.toggle('attack-target', attacks.includes(i));
 
-    const extra = [];
-    if (sel && sel.type === 'cell' && sel.i === i) extra.push('selected');
-    if (state.vanishing === i) extra.push('vanish');
-    if (card.faceUp && card.owner !== state.turn && !attacks.includes(i)) extra.push('not-mine');
-    el.appendChild(makeCardEl(card, extra));
+    // Пересоздаём карту только если она реально изменилась — иначе анимации не повторяются
+    const prev = el.dataset.sig;
+    const sig = cardSig(card, i);
+    if (sig !== prev) {
+      el.innerHTML = '';
+      if (card) {
+        const cEl = makeCardEl(card);
+        if (state.vanishing === i) cEl.classList.add('vanish');
+        else if (prev === 'back' && card.faceUp) cEl.classList.add('flip');
+        else if (card.value === 'M' && state.lastAction === 'place' && state.lastMove[0] === i) cEl.classList.add('pop');
+        el.appendChild(cEl);
+      }
+      el.dataset.sig = sig;
+    }
+
+    const cEl = el.firstChild;
+    if (cEl) {
+      cEl.classList.toggle('selected', !!(sel && sel.type === 'cell' && sel.i === i));
+      const mine = card.faceUp && card.owner === state.turn && !isAiTurn();
+      cEl.classList.toggle('not-mine', card.faceUp && !mine && !attacks.includes(i));
+    }
   });
 
   for (const p of PLAYERS) {
     document.getElementById(`score-${p}`).textContent = state.scores[p];
     document.getElementById(`panel-${p}`).classList.toggle('active', p === state.turn && !state.over);
+    document.getElementById(`tag-${p}`).textContent =
+      state.mode === 'ai' ? (p === state.aiColor ? 'ИИ' : 'Вы') : '';
 
     const handEl = document.getElementById(`hand-${p}`);
     handEl.innerHTML = '';
@@ -633,13 +1049,10 @@ function render() {
       handEl.innerHTML = '<span class="empty">пусто</span>';
     } else {
       for (let k = 0; k < state.hand[p]; k++) {
-        const extra = ['hand-card'];
-        if (p !== state.turn) extra.push('not-mine');
-        if (p === state.turn && sel && sel.type === 'hand') extra.push('selected');
-        const cEl = makeCardEl({ owner: p, value: 'M', faceUp: true }, extra);
-        cEl.style.width = 'var(--cell)';
-        cEl.style.height = 'var(--cell)';
-        cEl.style.animation = 'none';
+        const cEl = makeCardEl({ owner: p, value: 'M', faceUp: true });
+        const canUse = p === state.turn && !isAiTurn();
+        if (!canUse) cEl.classList.add('not-mine');
+        if (p === state.turn && sel && sel.type === 'hand') cEl.classList.add('selected');
         cEl.addEventListener('click', () => onHandClick(p));
         handEl.appendChild(cEl);
       }
@@ -647,8 +1060,8 @@ function render() {
   }
 
   const ti = document.getElementById('turn-indicator');
-  ti.className = 'turn-indicator ' + state.turn;
-  ti.textContent = state.over ? 'Игра окончена' : `Ход: ${NAMES[state.turn]}`;
+  ti.className = 'turn-indicator ' + state.turn + (state.aiThinking ? ' thinking' : '');
+  ti.textContent = state.over ? 'Игра окончена' : `Ход: ${name(state.turn)}`;
 
   renderLog();
 }
@@ -672,25 +1085,47 @@ function showScreen(name) {
   document.getElementById(`screen-${name}`).classList.add('active');
 }
 
+function leaveGame() {
+  if (state) state.gameId = -1; // останавливает отложенные ходы ИИ
+  showScreen('menu');
+}
+
+function syncSetupButtons() {
+  document.querySelectorAll('.opt-group').forEach(g => {
+    const key = g.dataset.opt;
+    g.querySelectorAll('.opt').forEach(b => b.classList.toggle('active', b.dataset.value === config[key]));
+  });
+}
+
 function init() {
   buildBoard();
   document.querySelectorAll('.win-score').forEach(e => (e.textContent = WIN_SCORE));
   document.getElementById('rules-win-score').textContent = WIN_SCORE;
   document.getElementById('rules-m-points').textContent = M_POINTS;
 
-  document.getElementById('btn-new').onclick = newGame;
+  document.getElementById('btn-vs-ai').onclick = () => { syncSetupButtons(); showScreen('setup'); };
+  document.getElementById('btn-pvp').onclick = () => newGame({ ...config, mode: 'pvp' });
   document.getElementById('btn-rules').onclick = () => showScreen('rules');
   document.getElementById('btn-rules-back').onclick = () => showScreen('menu');
-  document.getElementById('btn-again').onclick = newGame;
+  document.getElementById('btn-setup-back').onclick = () => showScreen('menu');
+  document.getElementById('btn-setup-start').onclick = () => newGame({ ...config, mode: 'ai' });
+  document.querySelectorAll('.opt-group').forEach(g => {
+    g.querySelectorAll('.opt').forEach(b => {
+      b.onclick = () => { config[g.dataset.opt] = b.dataset.value; syncSetupButtons(); };
+    });
+  });
+
+  document.getElementById('btn-again').onclick = () => newGame(config);
   document.getElementById('btn-victory-menu').onclick = () => showScreen('menu');
   document.getElementById('btn-to-menu').onclick = () => {
-    if (confirm('Выйти в меню? Текущая партия будет потеряна.')) showScreen('menu');
+    if (state && state.over) return leaveGame();
+    if (confirm('Выйти в меню? Текущая партия будет потеряна.')) leaveGame();
   };
   document.getElementById('btn-surrender').onclick = () => {
     if (!state || state.over || state.busy) return;
-    if (confirm(`${NAMES[state.turn]} сдаются?`)) {
-      const loser = state.turn;
-      finishGame(opponent(loser), `${NAMES[loser]} сдались.`);
+    const loser = state.mode === 'ai' ? opponent(state.aiColor) : state.turn;
+    if (confirm(state.mode === 'ai' ? 'Сдаться?' : `${NAMES[loser]} сдаются?`)) {
+      finishGame(opponent(loser), `${name(loser)} сдались.`);
     }
   };
 
