@@ -4,7 +4,227 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Manducat</title>
-  <link rel="stylesheet" href="style.css">
+  <style>
+* { box-sizing: border-box; }
+
+:root {
+  --blue: #2f6fe4;
+  --blue-dark: #1d4596;
+  --red: #e0413a;
+  --red-dark: #8f201b;
+  --gold: #e8b923;
+  --bg: #1b1d24;
+  --panel: #262934;
+  --text: #eef0f5;
+  --cell: 84px;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: radial-gradient(circle at top, #2a2e3b, var(--bg));
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  user-select: none;
+}
+
+.screen { display: none; min-height: 100vh; padding: 24px; }
+.screen.active { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+
+/* ---------- Кнопки / панели ---------- */
+.btn {
+  background: #3a3f50;
+  color: var(--text);
+  border: none;
+  border-radius: 10px;
+  padding: 14px 32px;
+  font-size: 18px;
+  cursor: pointer;
+  transition: transform .1s, background .2s;
+}
+.btn:hover { background: #4a5066; transform: translateY(-1px); }
+.btn.primary { background: linear-gradient(90deg, var(--blue), var(--red)); }
+.btn.primary:hover { filter: brightness(1.1); }
+.btn.small { padding: 8px 18px; font-size: 14px; }
+
+.panel {
+  background: var(--panel);
+  border-radius: 16px;
+  padding: 28px 36px;
+  max-width: 640px;
+  box-shadow: 0 10px 40px rgba(0,0,0,.4);
+}
+
+/* ---------- Меню ---------- */
+.logo {
+  font-size: 72px;
+  margin: 0;
+  letter-spacing: 4px;
+  background: linear-gradient(90deg, var(--blue), var(--red));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.subtitle { opacity: .7; margin: 8px 0 40px; font-size: 18px; }
+.menu-buttons { display: flex; flex-direction: column; gap: 14px; min-width: 240px; }
+
+.rules h2 { margin-top: 0; }
+.rules li { margin: 6px 0; line-height: 1.45; }
+.rules .hint { opacity: .7; font-size: 14px; }
+
+/* ---------- Игра ---------- */
+.game-layout { display: flex; gap: 24px; align-items: flex-start; }
+.center { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+
+.player-panel {
+  width: 160px;
+  background: var(--panel);
+  border-radius: 14px;
+  padding: 16px;
+  text-align: center;
+  border: 3px solid transparent;
+  opacity: .6;
+  transition: opacity .2s, border-color .2s, box-shadow .2s;
+}
+.player-panel.active { opacity: 1; }
+.player-panel.blue.active { border-color: var(--blue); box-shadow: 0 0 24px rgba(47,111,228,.5); }
+.player-panel.red.active { border-color: var(--red); box-shadow: 0 0 24px rgba(224,65,58,.5); }
+.player-name { font-size: 20px; font-weight: bold; }
+.player-panel.blue .player-name { color: #7fa8ff; }
+.player-panel.red .player-name { color: #ff8a84; }
+.score { font-size: 44px; font-weight: bold; margin: 8px 0 16px; }
+.score small { font-size: 18px; opacity: .6; }
+.hand-label { font-size: 13px; opacity: .6; text-transform: uppercase; letter-spacing: 1px; }
+.hand { min-height: calc(var(--cell) + 8px); display: flex; justify-content: center; align-items: center; margin-top: 6px; }
+.hand .empty { opacity: .35; font-size: 14px; }
+
+.turn-indicator {
+  font-size: 22px;
+  font-weight: bold;
+  padding: 6px 20px;
+  border-radius: 20px;
+}
+.turn-indicator.blue { background: var(--blue); }
+.turn-indicator.red { background: var(--red); }
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(6, var(--cell));
+  grid-template-rows: repeat(6, var(--cell));
+  gap: 6px;
+  padding: 10px;
+  background: #14161c;
+  border-radius: 14px;
+}
+
+.cell {
+  border-radius: 10px;
+  background: rgba(255,255,255,.04);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Карта */
+.card {
+  width: 100%;
+  height: 100%;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 38px;
+  font-weight: 800;
+  color: white;
+  text-shadow: 0 2px 3px rgba(0,0,0,.4);
+  cursor: pointer;
+  transition: transform .12s, box-shadow .12s;
+  animation: flip-in .3s ease;
+}
+.card:hover { transform: translateY(-2px); }
+.card.back {
+  background:
+    repeating-linear-gradient(45deg, #4a4f63 0 8px, #3d4254 8px 16px);
+  border: 3px solid #5c627a;
+  animation: none;
+}
+.card.back:hover { border-color: #9aa1bd; }
+.card.blue { background: linear-gradient(145deg, var(--blue), var(--blue-dark)); }
+.card.red { background: linear-gradient(145deg, var(--red), var(--red-dark)); }
+.card.gold { background: linear-gradient(145deg, #ffd85a, #b8860b); color: #3a2a00; text-shadow: none; }
+.card.mcard { font-family: Georgia, serif; }
+.card.not-mine { cursor: default; }
+.card.not-mine:hover { transform: none; }
+
+.card.selected { box-shadow: 0 0 0 4px #fff, 0 0 18px #fff; transform: scale(1.04); }
+.card.vanish { animation: vanish .9s ease forwards; }
+
+.cell.last-move::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border: 2px dashed rgba(255,255,255,.35);
+  border-radius: 12px;
+  pointer-events: none;
+}
+
+.cell.move-target { background: rgba(120, 255, 160, .18); cursor: pointer; box-shadow: inset 0 0 0 2px rgba(120,255,160,.6); }
+.cell.move-target:hover { background: rgba(120, 255, 160, .32); }
+.cell.attack-target .card { box-shadow: 0 0 0 4px #ffde3b, 0 0 16px #ffde3b; cursor: crosshair; }
+.cell.attack-target .card::after {
+  content: "⚔";
+  position: absolute;
+  top: 2px; right: 6px;
+  font-size: 16px;
+}
+
+.game-controls { display: flex; gap: 10px; }
+
+.log {
+  margin-top: 18px;
+  width: min(900px, 100%);
+  max-height: 110px;
+  overflow-y: auto;
+  background: rgba(0,0,0,.25);
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.log .entry.blue { color: #9dbcff; }
+.log .entry.red { color: #ffa6a1; }
+.log .entry.sys { color: #c9c9c9; font-style: italic; }
+
+/* ---------- Победа ---------- */
+.victory { text-align: center; min-width: 380px; }
+.victory h2 { font-size: 42px; margin: 0 0 10px; }
+.victory h2.blue { color: #7fa8ff; }
+.victory h2.red { color: #ff8a84; }
+.final-scores { display: flex; justify-content: center; gap: 30px; font-size: 20px; margin: 20px 0 28px; }
+.fs.blue b { color: #7fa8ff; }
+.fs.red b { color: #ff8a84; }
+
+@keyframes flip-in {
+  from { transform: rotateY(90deg); }
+  to { transform: rotateY(0); }
+}
+@keyframes vanish {
+  0% { transform: rotateY(90deg); opacity: 1; }
+  25% { transform: rotateY(0); opacity: 1; }
+  70% { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(.4) translateY(-30px); opacity: 0; }
+}
+
+@media (max-width: 900px) {
+  :root { --cell: 52px; }
+  .game-layout { flex-direction: column; align-items: center; }
+  .player-panel { width: 100%; max-width: 380px; display: flex; align-items: center; gap: 12px; justify-content: space-between; }
+  .score { margin: 0; font-size: 30px; }
+  .card { font-size: 24px; }
+  .hand { min-height: auto; }
+}
+  </style>
 </head>
 <body>
 
@@ -24,11 +244,11 @@
       <h2>Правила</h2>
       <ul>
         <li>Поле 6×6, все карты лежат рубашкой вверх.</li>
-        <li>У каждого игрока армия: <b>1</b>×4, <b>2</b>×3, <b>3</b>×2, <b>5</b>×2, <b>8</b>×2, <b>M</b>×1. Плюс 6 нейтральных карт <b>G</b>.</li>
+        <li>У каждого игрока армия: <b>1</b>×4, <b>2</b>×3, <b>3</b>×3, <b>5</b>×2, <b>8</b>×2, <b>M</b>×1. Плюс 6 нейтральных карт <b>G</b>.</li>
         <li>За ход можно сделать <b>одно</b> действие:
           <ol>
             <li><b>Открыть</b> любую закрытую карту.</li>
-            <li><b>Съесть</b> своей открытой картой открытую карту соперника по прямой (как ладья), если между ними нет карт. Есть можно только более слабые карты. <b>1</b> бьёт <b>8</b>. <b>M</b> бьёт всех, и <b>M</b> бьют все.</li>
+            <li><b>Съесть</b> своей открытой картой открытую карту соперника по прямой (как ладья), если между ними нет карт. Есть можно только равные или более слабые карты. <b>1</b> бьёт <b>8</b>. <b>M</b> бьёт всех, и <b>M</b> бьют все.</li>
             <li><b>Сдвинуть</b> свою открытую карту на соседнюю пустую клетку (вверх/вниз/влево/вправо).</li>
             <li><b>Выложить M</b> из руки на любую пустую клетку.</li>
           </ol>
@@ -37,6 +257,7 @@
         <li>Открытая <b>G</b> даёт <b>+3</b> очка открывшему и снимается с поля.</li>
         <li>За съеденную карту даётся очков по её номиналу (M = <span id="rules-m-points"></span>).</li>
         <li>Побеждает тот, кто первым наберёт <b><span id="rules-win-score"></span></b> очков.</li>
+        <li>Если у игрока в его ход нет ни одного возможного действия — он проигрывает.</li>
       </ul>
       <p class="hint">Управление: клик по закрытой карте — открыть. Клик по своей карте — выбрать, затем клик по подсвеченной клетке. Esc / правый клик — отменить выбор.</p>
       <button class="btn" id="btn-rules-back">Назад</button>
@@ -88,6 +309,396 @@
     </div>
   </section>
 
-  <script src="game.js"></script>
+  <script>
+'use strict';
+
+// ================== НАСТРОЙКИ ==================
+const SIZE = 6;
+const WIN_SCORE = 39;
+const G_POINTS = 3;
+const M_POINTS = 0;           // сколько очков даёт съеденная M
+const G_COUNT = 6;
+const ARMY = [                // [номинал, количество]
+  ['1', 4], ['2', 3], ['3', 3], ['5', 2], ['8', 2], ['M', 1],
+];
+const POWER = { '1': 1, '2': 2, '3': 3, '5': 5, '8': 8 };
+const PLAYERS = ['blue', 'red'];
+const NAMES = { blue: 'Синие', red: 'Красные' };
+const NAMES_GEN = { blue: 'синих', red: 'красных' };
+const DIRS = [[0, 1], [0, -1], [1, 0], [-1, 0]];
+
+// ================== ПРАВИЛА ==================
+function canBeat(attacker, target) {
+  if (attacker === 'M' || target === 'M') return true;
+  if (attacker === '1' && target === '8') return true;
+  return POWER[attacker] >= POWER[target];   // равные бьют друг друга
+}
+
+function cardPoints(value) {
+  return value === 'M' ? M_POINTS : POWER[value];
+}
+
+const opponent = p => (p === 'blue' ? 'red' : 'blue');
+const rc = i => [Math.floor(i / SIZE), i % SIZE];
+const idx = (r, c) => r * SIZE + c;
+const inside = (r, c) => r >= 0 && r < SIZE && c >= 0 && c < SIZE;
+const coordName = i => { const [r, c] = rc(i); return 'ABCDEF'[c] + (r + 1); };
+const cardLabel = card => (card.owner ? `${card.value} ${NAMES_GEN[card.owner]}` : card.value);
+
+// ================== СОСТОЯНИЕ ==================
+let state = null;
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function createDeck() {
+  const deck = [];
+  for (const owner of PLAYERS) {
+    for (const [value, count] of ARMY) {
+      for (let k = 0; k < count; k++) deck.push({ owner, value, faceUp: false });
+    }
+  }
+  for (let k = 0; k < G_COUNT; k++) deck.push({ owner: null, value: 'G', faceUp: false });
+  while (deck.length < SIZE * SIZE) deck.push(null); // пустые клетки, если карт меньше 36
+  return shuffle(deck);
+}
+
+function newGame() {
+  state = {
+    board: createDeck(),
+    turn: 'blue',
+    scores: { blue: 0, red: 0 },
+    hand: { blue: 0, red: 0 },
+    selected: null,      // {type:'cell', i} | {type:'hand'}
+    busy: false,
+    over: false,
+    lastMove: [],
+    vanishing: null,     // индекс клетки с исчезающей картой (G / M)
+    log: [],
+  };
+  addLog('sys', 'Новая игра. Ходят Синие.');
+  showScreen('game');
+  render();
+}
+
+// ================== ВОЗМОЖНЫЕ ДЕЙСТВИЯ ==================
+function moveTargets(i) {
+  const [r, c] = rc(i);
+  const res = [];
+  for (const [dr, dc] of DIRS) {
+    const nr = r + dr, nc = c + dc;
+    if (inside(nr, nc) && state.board[idx(nr, nc)] === null) res.push(idx(nr, nc));
+  }
+  return res;
+}
+
+function attackTargets(i) {
+  const me = state.board[i];
+  const [r, c] = rc(i);
+  const res = [];
+  for (const [dr, dc] of DIRS) {
+    let nr = r + dr, nc = c + dc;
+    while (inside(nr, nc) && state.board[idx(nr, nc)] === null) { nr += dr; nc += dc; }
+    if (!inside(nr, nc)) continue;
+    const target = state.board[idx(nr, nc)];
+    if (target.faceUp && target.owner === opponent(me.owner) && canBeat(me.value, target.value)) {
+      res.push(idx(nr, nc));
+    }
+  }
+  return res;
+}
+
+function emptyCells() {
+  return state.board.map((c, i) => (c === null ? i : -1)).filter(i => i >= 0);
+}
+
+function hasAnyAction(player) {
+  const b = state.board;
+  if (b.some(c => c && !c.faceUp)) return true;
+  if (state.hand[player] > 0 && emptyCells().length > 0) return true;
+  for (let i = 0; i < b.length; i++) {
+    const c = b[i];
+    if (c && c.faceUp && c.owner === player && (moveTargets(i).length || attackTargets(i).length)) return true;
+  }
+  return false;
+}
+
+// ================== ДЕЙСТВИЯ ==================
+function flipCard(i) {
+  const card = state.board[i];
+  const p = state.turn;
+  card.faceUp = true;
+  state.lastMove = [i];
+
+  if (card.value === 'G') {
+    state.scores[p] += G_POINTS;
+    addLog(p, `${NAMES[p]} открыли ${coordName(i)}: G! +${G_POINTS} очка.`);
+    vanishThenEnd(i);
+  } else if (card.value === 'M') {
+    state.hand[card.owner]++;
+    addLog(p, `${NAMES[p]} открыли ${coordName(i)}: M ${NAMES_GEN[card.owner]} — уходит в руку ${NAMES[card.owner] === NAMES[p] ? 'себе' : 'сопернику'}.`);
+    vanishThenEnd(i);
+  } else {
+    addLog(p, `${NAMES[p]} открыли ${coordName(i)}: ${cardLabel(card)}.`);
+    endTurn();
+  }
+}
+
+function vanishThenEnd(i) {
+  state.busy = true;
+  state.vanishing = i;
+  render();
+  setTimeout(() => {
+    state.board[i] = null;
+    state.vanishing = null;
+    state.busy = false;
+    endTurn();
+  }, 900);
+}
+
+function moveCard(from, to) {
+  const p = state.turn;
+  const card = state.board[from];
+  state.board[to] = card;
+  state.board[from] = null;
+  state.lastMove = [from, to];
+  addLog(p, `${NAMES[p]}: ${card.value} ${coordName(from)} → ${coordName(to)}.`);
+  endTurn();
+}
+
+function attack(from, to) {
+  const p = state.turn;
+  const me = state.board[from];
+  const victim = state.board[to];
+  const pts = cardPoints(victim.value);
+  state.scores[p] += pts;
+  state.board[to] = me;
+  state.board[from] = null;
+  state.lastMove = [from, to];
+  addLog(p, `${NAMES[p]}: ${me.value} (${coordName(from)}) съедает ${victim.value} на ${coordName(to)}. +${pts}.`);
+  endTurn();
+}
+
+function playM(i) {
+  const p = state.turn;
+  state.hand[p]--;
+  state.board[i] = { owner: p, value: 'M', faceUp: true };
+  state.lastMove = [i];
+  addLog(p, `${NAMES[p]} выкладывают M на ${coordName(i)}.`);
+  endTurn();
+}
+
+function endTurn() {
+  state.selected = null;
+
+  for (const p of PLAYERS) {
+    if (state.scores[p] >= WIN_SCORE) {
+      return finishGame(p, `${NAMES[p]} набрали ${state.scores[p]} очков.`);
+    }
+  }
+
+  state.turn = opponent(state.turn);
+  if (!hasAnyAction(state.turn)) {
+    const loser = state.turn;
+    return finishGame(opponent(loser), `У ${NAMES_GEN[loser]} не осталось ходов — поражение.`);
+  }
+  render();
+}
+
+function finishGame(winner, reason) {
+  state.over = true;
+  render();
+  const title = document.getElementById('victory-title');
+  title.className = winner || '';
+  title.textContent = winner ? `Победили ${NAMES[winner]}!` : 'Ничья!';
+  document.getElementById('victory-reason').textContent = reason;
+  document.getElementById('final-blue').textContent = state.scores.blue;
+  document.getElementById('final-red').textContent = state.scores.red;
+  setTimeout(() => showScreen('victory'), 400);
+}
+
+// ================== ВВОД ==================
+function onCellClick(i) {
+  if (!state || state.busy || state.over) return;
+  const card = state.board[i];
+  const sel = state.selected;
+  const p = state.turn;
+
+  // Выбрана M из руки — выкладываем на пустую клетку
+  if (sel && sel.type === 'hand') {
+    if (card === null) return playM(i);
+    state.selected = null;
+  }
+
+  // Выбрана карта на поле — двигаем или атакуем
+  if (sel && sel.type === 'cell') {
+    if (moveTargets(sel.i).includes(i)) return moveCard(sel.i, i);
+    if (attackTargets(sel.i).includes(i)) return attack(sel.i, i);
+    if (sel.i === i) { state.selected = null; return render(); }
+  }
+
+  if (card === null) { state.selected = null; return render(); }
+
+  if (!card.faceUp) return flipCard(i);
+
+  if (card.owner === p) {
+    state.selected = { type: 'cell', i };
+  } else {
+    state.selected = null;
+  }
+  render();
+}
+
+function onHandClick(player) {
+  if (!state || state.busy || state.over) return;
+  if (player !== state.turn || state.hand[player] === 0) return;
+  if (state.selected && state.selected.type === 'hand') state.selected = null;
+  else state.selected = { type: 'hand' };
+  render();
+}
+
+function cancelSelection() {
+  if (state && state.selected) { state.selected = null; render(); }
+}
+
+// ================== ОТРИСОВКА ==================
+const boardEl = document.getElementById('board');
+const cellEls = [];
+
+function buildBoard() {
+  boardEl.innerHTML = '';
+  for (let i = 0; i < SIZE * SIZE; i++) {
+    const el = document.createElement('div');
+    el.className = 'cell';
+    el.addEventListener('click', () => onCellClick(i));
+    boardEl.appendChild(el);
+    cellEls.push(el);
+  }
+}
+
+function makeCardEl(card, extra = []) {
+  const el = document.createElement('div');
+  el.className = 'card';
+  if (!card.faceUp) {
+    el.classList.add('back');
+  } else {
+    el.textContent = card.value;
+    if (card.value === 'G') el.classList.add('gold');
+    else el.classList.add(card.owner);
+    if (card.value === 'M') el.classList.add('mcard');
+  }
+  extra.forEach(c => el.classList.add(c));
+  return el;
+}
+
+function render() {
+  if (!state) return;
+  const sel = state.selected;
+  let moves = [], attacks = [], placeTargets = [];
+  if (sel && sel.type === 'cell') {
+    moves = moveTargets(sel.i);
+    attacks = attackTargets(sel.i);
+  } else if (sel && sel.type === 'hand') {
+    placeTargets = emptyCells();
+  }
+
+  state.board.forEach((card, i) => {
+    const el = cellEls[i];
+    el.className = 'cell';
+    el.innerHTML = '';
+    if (state.lastMove.includes(i)) el.classList.add('last-move');
+    if (moves.includes(i) || placeTargets.includes(i)) el.classList.add('move-target');
+    if (attacks.includes(i)) el.classList.add('attack-target');
+    if (!card) return;
+
+    const extra = [];
+    if (sel && sel.type === 'cell' && sel.i === i) extra.push('selected');
+    if (state.vanishing === i) extra.push('vanish');
+    if (card.faceUp && card.owner !== state.turn && !attacks.includes(i)) extra.push('not-mine');
+    el.appendChild(makeCardEl(card, extra));
+  });
+
+  for (const p of PLAYERS) {
+    document.getElementById(`score-${p}`).textContent = state.scores[p];
+    document.getElementById(`panel-${p}`).classList.toggle('active', p === state.turn && !state.over);
+
+    const handEl = document.getElementById(`hand-${p}`);
+    handEl.innerHTML = '';
+    if (state.hand[p] === 0) {
+      handEl.innerHTML = '<span class="empty">пусто</span>';
+    } else {
+      for (let k = 0; k < state.hand[p]; k++) {
+        const extra = ['hand-card'];
+        if (p !== state.turn) extra.push('not-mine');
+        if (p === state.turn && sel && sel.type === 'hand') extra.push('selected');
+        const cEl = makeCardEl({ owner: p, value: 'M', faceUp: true }, extra);
+        cEl.style.width = 'var(--cell)';
+        cEl.style.height = 'var(--cell)';
+        cEl.style.animation = 'none';
+        cEl.addEventListener('click', () => onHandClick(p));
+        handEl.appendChild(cEl);
+      }
+    }
+  }
+
+  const ti = document.getElementById('turn-indicator');
+  ti.className = 'turn-indicator ' + state.turn;
+  ti.textContent = state.over ? 'Игра окончена' : `Ход: ${NAMES[state.turn]}`;
+
+  renderLog();
+}
+
+function addLog(type, text) {
+  state.log.push({ type, text });
+}
+
+function renderLog() {
+  const logEl = document.getElementById('log');
+  logEl.innerHTML = state.log
+    .slice(-50)
+    .map(e => `<div class="entry ${e.type}">${e.text}</div>`)
+    .join('');
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+// ================== ЭКРАНЫ ==================
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(`screen-${name}`).classList.add('active');
+}
+
+function init() {
+  buildBoard();
+  document.querySelectorAll('.win-score').forEach(e => (e.textContent = WIN_SCORE));
+  document.getElementById('rules-win-score').textContent = WIN_SCORE;
+  document.getElementById('rules-m-points').textContent = M_POINTS;
+
+  document.getElementById('btn-new').onclick = newGame;
+  document.getElementById('btn-rules').onclick = () => showScreen('rules');
+  document.getElementById('btn-rules-back').onclick = () => showScreen('menu');
+  document.getElementById('btn-again').onclick = newGame;
+  document.getElementById('btn-victory-menu').onclick = () => showScreen('menu');
+  document.getElementById('btn-to-menu').onclick = () => {
+    if (confirm('Выйти в меню? Текущая партия будет потеряна.')) showScreen('menu');
+  };
+  document.getElementById('btn-surrender').onclick = () => {
+    if (!state || state.over || state.busy) return;
+    if (confirm(`${NAMES[state.turn]} сдаются?`)) {
+      const loser = state.turn;
+      finishGame(opponent(loser), `${NAMES[loser]} сдались.`);
+    }
+  };
+
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') cancelSelection(); });
+  boardEl.addEventListener('contextmenu', e => { e.preventDefault(); cancelSelection(); });
+}
+
+init();
+  </script>
 </body>
 </html>
