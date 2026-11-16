@@ -9,7 +9,7 @@ npm install
 npm run dev       # http://localhost:5173
 ```
 
-Сборка: `npm run build` → `apps/client/dist` (статические файлы, открываются через любой веб-сервер).
+Сборка: `npm run build` → `apps/client/dist` (статические файлы для веб-сервера). `npm run build:single` → `apps/client/dist-single/index.html` — всё в одном файле.
 
 ## Разработка
 
