@@ -1,0 +1,342 @@
+* { box-sizing: border-box; }
+
+:root {
+  --blue: #2f6fe4;
+  --blue-dark: #1d4596;
+  --red: #e0413a;
+  --red-dark: #8f201b;
+  --bg: #1b1d24;
+  --panel: #262934;
+  --text: #eef0f5;
+  --accent: #8f96ff;
+  --cell: 84px;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: radial-gradient(circle at top, #2a2e3b, var(--bg));
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.screen { display: none; min-height: 100vh; padding: 24px; }
+.screen.active { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+
+/* ---------- Кнопки / панели ---------- */
+.btn {
+  background: #3a3f50;
+  color: var(--text);
+  border: none;
+  border-radius: 10px;
+  padding: 14px 32px;
+  font-size: 18px;
+  cursor: pointer;
+  transition: transform .1s, background .2s;
+}
+.btn:hover { background: #4a5066; transform: translateY(-1px); }
+.btn.primary { background: #5b63d6; }
+.btn.primary:hover { background: #6d75e8; }
+.btn.small { padding: 8px 18px; font-size: 14px; }
+
+.panel {
+  background: var(--panel);
+  border-radius: 16px;
+  padding: 28px 36px;
+  max-width: 680px;
+  box-shadow: 0 10px 40px rgba(0,0,0,.4);
+}
+
+/* ---------- Меню ---------- */
+.logo {
+  font-size: 72px;
+  margin: 0 0 44px;
+  letter-spacing: 4px;
+  color: #e9ebff;
+  text-shadow: 0 4px 30px rgba(120,130,255,.35);
+}
+.menu-buttons { display: flex; flex-direction: column; gap: 14px; min-width: 260px; }
+
+.rules h2, .setup h2 { margin-top: 0; }
+.rules h3 { margin: 18px 0 6px; }
+.rules li { margin: 6px 0; line-height: 1.45; }
+.rules .hint { opacity: .7; font-size: 14px; }
+
+/* ---------- Настройка партии ---------- */
+.setup { width: min(560px, 100%); }
+.opt-title { font-size: 14px; opacity: .7; text-transform: uppercase; letter-spacing: 1px; margin: 18px 0 8px; }
+.opt-group, .char-grid { display: flex; gap: 8px; flex-wrap: wrap; }
+.opt {
+  flex: 1;
+  background: #333746;
+  color: var(--text);
+  border: 2px solid transparent;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 15px;
+  cursor: pointer;
+}
+.opt:hover { background: #3d4254; }
+.opt.active { border-color: var(--accent); background: #3d4270; }
+.opt small { display: block; opacity: .6; font-size: 12px; margin-top: 2px; }
+.char-grid .opt { flex: 0 0 calc(25% - 6px); padding: 8px 4px; font-size: 13px; }
+.char-grid .opt .ic { display: block; font-size: 22px; margin-bottom: 2px; }
+.char-desc { font-size: 13px; opacity: .8; margin-top: 8px; min-height: 34px; line-height: 1.35; }
+.setup .menu-buttons { margin-top: 24px; flex-direction: row; }
+.setup .menu-buttons .btn { flex: 1; }
+
+/* ---------- Игра ---------- */
+.game-layout { display: flex; gap: 24px; align-items: flex-start; }
+.center { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+
+.player-panel {
+  width: 176px;
+  background: var(--panel);
+  border-radius: 14px;
+  padding: 14px;
+  text-align: center;
+  border: 3px solid transparent;
+  opacity: .65;
+  transition: opacity .2s, border-color .2s, box-shadow .2s;
+}
+.player-panel.active { opacity: 1; }
+.player-panel.blue.active { border-color: var(--blue); box-shadow: 0 0 24px rgba(47,111,228,.5); }
+.player-panel.red.active { border-color: var(--red); box-shadow: 0 0 24px rgba(224,65,58,.5); }
+.player-name { font-size: 20px; font-weight: bold; }
+.player-tag { font-size: 13px; opacity: .75; min-height: 17px; margin-top: 2px; }
+.char-label { font-size: 14px; margin-top: 4px; opacity: .9; }
+.player-panel.blue .player-name { color: #7fa8ff; }
+.player-panel.red .player-name { color: #ff8a84; }
+.score { font-size: 44px; font-weight: bold; margin: 6px 0 10px; }
+.score small { font-size: 18px; opacity: .6; }
+.hand-label { font-size: 13px; opacity: .6; text-transform: uppercase; letter-spacing: 1px; }
+.hand { min-height: calc(var(--cell) + 8px); display: flex; justify-content: center; align-items: center; margin-top: 6px; }
+.hand .empty { opacity: .35; font-size: 14px; }
+.hand .card { width: var(--cell); height: var(--cell); }
+
+.ability-btn {
+  width: 100%;
+  margin-top: 10px;
+  background: #3d4270;
+  color: var(--text);
+  border: 2px solid transparent;
+  border-radius: 10px;
+  padding: 8px 6px;
+  font-size: 14px;
+  cursor: pointer;
+}
+.ability-btn small { display: block; font-size: 12px; opacity: .75; margin-top: 2px; }
+.ability-btn:disabled { background: #30333f; opacity: .6; cursor: default; }
+.ability-btn.ready:not(:disabled) { border-color: var(--accent); box-shadow: 0 0 12px rgba(143,150,255,.45); }
+.ability-btn.active { background: #5b63d6; }
+.ability-btn.hidden { display: none; }
+.quiet { font-size: 12px; opacity: .7; margin-top: 8px; min-height: 15px; }
+.quiet.warn { color: #ffcf5a; opacity: 1; font-weight: bold; }
+
+.turn-indicator {
+  font-size: 22px;
+  font-weight: bold;
+  padding: 6px 20px;
+  border-radius: 20px;
+}
+.turn-indicator.blue { background: var(--blue); }
+.turn-indicator.red { background: var(--red); }
+.turn-indicator.thinking::after { content: " · думает…"; font-weight: normal; opacity: .85; }
+.hint-line { font-size: 14px; opacity: .8; min-height: 18px; text-align: center; }
+
+.board {
+  display: grid;
+  grid-template-columns: repeat(6, var(--cell));
+  grid-template-rows: repeat(6, var(--cell));
+  gap: 6px;
+  padding: 10px;
+  background: #14161c;
+  border-radius: 14px;
+}
+
+.cell {
+  border-radius: 10px;
+  background: rgba(255,255,255,.04);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Карта */
+.card {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 38px;
+  font-weight: 800;
+  color: white;
+  text-shadow: 0 2px 3px rgba(0,0,0,.4);
+  cursor: pointer;
+  transition: transform .12s, box-shadow .12s;
+}
+.card:hover { transform: translateY(-2px); }
+.card.back {
+  background: repeating-linear-gradient(45deg, #4a4f63 0 8px, #3d4254 8px 16px);
+  border: 3px solid #5c627a;
+}
+.card.back:hover { border-color: #9aa1bd; }
+.card.blue { background: linear-gradient(145deg, var(--blue), var(--blue-dark)); }
+.card.red { background: linear-gradient(145deg, var(--red), var(--red-dark)); }
+.card.gold { background: linear-gradient(145deg, #ffd85a, #b8860b); color: #3a2a00; text-shadow: none; }
+.card.mcard .val { font-family: Georgia, serif; }
+.card.not-mine { cursor: default; }
+.card.not-mine:hover { transform: none; }
+
+/* Подсмотренная карта (Scout) */
+.card.peek { border-color: #d9dcff; }
+.card.peek .val { opacity: .9; font-size: 30px; }
+.card.peek.blue-peek .val { color: #9dbcff; }
+.card.peek.red-peek .val { color: #ffa6a1; }
+.card.peek.gold-peek .val { color: #ffd85a; }
+.card.peek::before { content: "👁"; position: absolute; top: 2px; left: 4px; font-size: 13px; text-shadow: none; }
+
+/* Эффекты на карте */
+.card .orig { position: absolute; bottom: 3px; right: 6px; font-size: 13px; text-decoration: line-through; opacity: .8; }
+.card.cursed .val { color: #e7c8ff; }
+.badge { position: absolute; font-size: 12px; line-height: 1; text-shadow: none; }
+.badge.curse { top: 3px; right: 4px; background: #8b3fd1; color: #fff; padding: 2px 4px; border-radius: 6px; font-weight: bold; }
+.badge.poison { top: 3px; left: 4px; }
+.badge.shield { top: 3px; left: 4px; }
+.bar { position: absolute; left: 6px; right: 6px; height: 5px; display: flex; gap: 2px; }
+.bar i { flex: 1; border-radius: 2px; background: rgba(0,0,0,.35); }
+.bar.poison { bottom: 5px; }
+.bar.poison i.on { background: #6ee05c; }
+.bar.shield { bottom: 12px; }
+.bar.shield i.on { background: #5ad1ff; }
+.card.shielded { box-shadow: 0 0 0 3px #5ad1ff inset; }
+.card.poisoned { box-shadow: 0 0 0 3px #6ee05c inset; }
+
+/* Мины, анимации-эффекты */
+.mine { font-size: 28px; opacity: .85; border-radius: 50%; padding: 6px; line-height: 1; }
+.mine.blue { box-shadow: 0 0 0 3px var(--blue); }
+.mine.red { box-shadow: 0 0 0 3px var(--red); }
+.mine.both { box-shadow: 0 0 0 3px #fff; }
+.fx { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 44px; pointer-events: none; animation: fx .9s ease forwards; z-index: 2; }
+.fx.shield { font-size: 38px; }
+
+.card.flip { animation: flip-in .35s ease; }
+.card.pop { animation: pop .3s ease; }
+.card.selected { box-shadow: 0 0 0 4px #fff, 0 0 18px #fff; transform: scale(1.04); }
+.card.vanish { animation: vanish .9s ease forwards; }
+
+.cell.last-move::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border: 2px dashed rgba(255,255,255,.35);
+  border-radius: 12px;
+  pointer-events: none;
+}
+
+.cell.move-target { background: rgba(120, 255, 160, .18); cursor: pointer; box-shadow: inset 0 0 0 2px rgba(120,255,160,.6); }
+.cell.move-target:hover { background: rgba(120, 255, 160, .32); }
+.cell.attack-target .card { box-shadow: 0 0 0 4px #ffde3b, 0 0 16px #ffde3b; cursor: crosshair; }
+.cell.attack-target .card::after { content: "⚔"; position: absolute; top: 2px; right: 6px; font-size: 16px; }
+.cell.ability-target { cursor: pointer; box-shadow: inset 0 0 0 2px rgba(190,150,255,.8); background: rgba(190,150,255,.15); }
+.cell.ability-target .card { box-shadow: 0 0 0 4px #be96ff, 0 0 16px #be96ff; }
+.cell.scout-area { box-shadow: 0 0 0 3px #d9dcff; background: rgba(217,220,255,.2); }
+
+.game-controls { display: flex; gap: 10px; }
+
+.log {
+  margin-top: 18px;
+  width: min(900px, 100%);
+  max-height: 110px;
+  overflow-y: auto;
+  background: rgba(0,0,0,.25);
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.log .entry.blue { color: #9dbcff; }
+.log .entry.red { color: #ffa6a1; }
+.log .entry.sys { color: #c9c9c9; font-style: italic; }
+
+/* ---------- Сообщение о способности ---------- */
+.toast {
+  position: fixed;
+  top: 18px;
+  left: 50%;
+  transform: translate(-50%, -20px);
+  background: rgba(30, 32, 44, .96);
+  border: 2px solid var(--accent);
+  border-radius: 12px;
+  padding: 12px 20px;
+  font-size: 17px;
+  max-width: 92vw;
+  text-align: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .25s, transform .25s;
+  z-index: 20;
+  box-shadow: 0 8px 30px rgba(0,0,0,.5);
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+/* ---------- Окно подтверждения ---------- */
+.modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.55); align-items: center; justify-content: center; z-index: 10; padding: 20px; }
+.modal.open { display: flex; }
+.modal-box { text-align: center; min-width: 280px; }
+.modal-box p { font-size: 20px; margin: 0 0 22px; }
+.modal-buttons { display: flex; gap: 12px; }
+.modal-buttons .btn { flex: 1; }
+
+/* ---------- Победа ---------- */
+.victory { text-align: center; min-width: 380px; }
+.victory h2 { font-size: 42px; margin: 0 0 10px; }
+.victory h2.blue { color: #7fa8ff; }
+.victory h2.red { color: #ff8a84; }
+.final-scores { display: flex; justify-content: center; gap: 30px; font-size: 20px; margin: 20px 0 28px; }
+.fs.blue b { color: #7fa8ff; }
+.fs.red b { color: #ff8a84; }
+
+@keyframes flip-in { from { transform: rotateY(90deg); } to { transform: rotateY(0); } }
+@keyframes pop { from { transform: scale(.3); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes vanish {
+  0% { transform: rotateY(90deg); opacity: 1; }
+  25% { transform: rotateY(0); opacity: 1; }
+  70% { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(.4) translateY(-30px); opacity: 0; }
+}
+@keyframes fx {
+  0% { transform: scale(.4); opacity: 0; }
+  30% { transform: scale(1.3); opacity: 1; }
+  100% { transform: scale(1); opacity: 0; }
+}
+
+@media (max-width: 900px) {
+  :root { --cell: 52px; }
+  .screen { padding: 14px; }
+  .game-layout { flex-direction: column; align-items: center; gap: 12px; }
+  .player-panel { width: 100%; max-width: 380px; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; justify-content: space-between; text-align: left; padding: 10px 14px; }
+  .score { margin: 0; font-size: 30px; }
+  .card { font-size: 24px; }
+  .card.peek .val { font-size: 20px; }
+  .hand { min-height: auto; margin-top: 2px; }
+  .ability-btn { margin-top: 2px; flex: 1 1 60%; }
+  .quiet { margin-top: 0; }
+  .badge { font-size: 9px; }
+  .badge.curse { padding: 1px 2px; }
+  .card .orig { font-size: 10px; bottom: 1px; right: 3px; }
+  .bar { height: 3px; left: 4px; right: 4px; }
+  .bar.poison { bottom: 3px; }
+  .bar.shield { bottom: 8px; }
+  .mine { font-size: 20px; padding: 3px; }
+  .fx { font-size: 32px; }
+  .char-grid .opt { flex: 0 0 calc(33.3% - 6px); }
+  .panel { padding: 22px 20px; }
+  .victory { min-width: 0; }
+}

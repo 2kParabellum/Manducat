@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manducat</title>
+</head>
+<body>
+
+  <!-- МЕНЮ -->
+  <section id="screen-menu" class="screen active">
+    <h1 class="logo">Manducat</h1>
+    <div class="menu-buttons">
+      <button class="btn primary" id="btn-vs-ai">Играть против ИИ</button>
+      <button class="btn" id="btn-pvp">Играть вдвоём</button>
+      <button class="btn" id="btn-rules">Правила</button>
+    </div>
+  </section>
+
+  <!-- НАСТРОЙКА ПАРТИИ -->
+  <section id="screen-setup" class="screen">
+    <div class="panel setup">
+      <h2 id="setup-title"></h2>
+      <div id="setup-ai-opts">
+        <div class="opt-title">Ваш цвет</div>
+        <div class="opt-group" data-opt="color">
+          <button class="opt" data-value="blue">Синие<small>ходят первыми</small></button>
+          <button class="opt" data-value="red">Красные<small>ходят вторыми</small></button>
+          <button class="opt" data-value="random">Случайно<small>&nbsp;</small></button>
+        </div>
+        <div class="opt-title">Сложность</div>
+        <div class="opt-group" data-opt="difficulty">
+          <button class="opt" data-value="easy">Лёгкий<small>часто ошибается</small></button>
+          <button class="opt" data-value="normal">Средний<small>на 2 хода</small></button>
+          <button class="opt" data-value="hard">Сложный<small>на 3 хода</small></button>
+        </div>
+      </div>
+      <div class="opt-title" id="char-a-title"></div>
+      <div class="char-grid" data-opt="charA"></div>
+      <div class="char-desc" id="char-a-desc"></div>
+      <div class="opt-title" id="char-b-title"></div>
+      <div class="char-grid" data-opt="charB"></div>
+      <div class="char-desc" id="char-b-desc"></div>
+      <div class="menu-buttons">
+        <button class="btn" id="btn-setup-back">Назад</button>
+        <button class="btn primary" id="btn-setup-start">Начать</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ПРАВИЛА -->
+  <section id="screen-rules" class="screen">
+    <div class="panel rules">
+      <h2>Правила</h2>
+      <ul>
+        <li>Поле 6×6, все карты лежат рубашкой вверх.</li>
+        <li>У каждого игрока армия: <b>1</b>×4, <b>2</b>×3, <b>3</b>×3, <b>5</b>×2, <b>8</b>×2, <b>M</b>×1. Плюс 6 нейтральных карт <b>G</b>.</li>
+        <li>За ход можно сделать <b>одно</b> действие:
+          <ol>
+            <li><b>Открыть</b> любую закрытую карту.</li>
+            <li><b>Съесть</b> своей открытой картой открытую карту соперника по прямой (как ладья), если между ними нет карт. Есть можно только равные или более слабые карты. <b>1</b> бьёт <b>8</b>. <b>M</b> бьёт всех, и <b>M</b> бьют все.</li>
+            <li><b>Сдвинуть</b> свою открытую карту на соседнюю пустую клетку (вверх/вниз/влево/вправо).</li>
+            <li><b>Выложить M</b> из руки на любую пустую клетку.</li>
+            <li><b>Применить способность</b> персонажа (раз в <span class="ability-cd"></span> своих ходов).</li>
+          </ol>
+        </li>
+        <li>Открытая <b>M</b> уходит в руку игроку её цвета.</li>
+        <li>Открытая <b>G</b> даёт <b>+3</b> очка открывшему и снимается с поля.</li>
+        <li>За съеденную карту даётся очков по её силе (M = <span id="rules-m-points"></span>).</li>
+        <li>Побеждает тот, кто первым наберёт <b><span id="rules-win-score"></span></b> очков.</li>
+        <li>Если у игрока набралось <b><span class="quiet-limit"></span> ходов подряд</b> без открытий и взятий — партия заканчивается: побеждает тот, у кого больше очков, а при равенстве проигрывает сделавший этот ход.</li>
+        <li>Если у игрока в его ход нет ни одного возможного действия — он проигрывает.</li>
+      </ul>
+      <h3>Персонажи</h3>
+      <ul id="rules-chars"></ul>
+      <p class="hint">Управление: клик по закрытой карте — открыть. Клик по своей карте — выбрать, затем клик по подсвеченной клетке. Кнопка способности — в панели игрока. Esc / правый клик — отменить выбор.</p>
+      <button class="btn" id="btn-rules-back">Назад</button>
+    </div>
+  </section>
+
+  <!-- ИГРА -->
+  <section id="screen-game" class="screen">
+    <div class="game-layout">
+      <aside class="player-panel blue" id="panel-blue">
+        <div>
+          <div class="player-name">Синие</div>
+          <div class="player-tag" id="tag-blue"></div>
+          <div class="char-label" id="char-blue"></div>
+        </div>
+        <div class="score"><span id="score-blue">0</span><small> / <span class="win-score"></span></small></div>
+        <div>
+          <div class="hand-label">Рука</div>
+          <div class="hand" id="hand-blue"></div>
+        </div>
+        <button class="ability-btn" id="ability-blue"></button>
+        <div class="quiet" id="quiet-blue"></div>
+      </aside>
+
+      <main class="center">
+        <div class="turn-indicator" id="turn-indicator"></div>
+        <div class="hint-line" id="hint-line"></div>
+        <div class="board" id="board"></div>
+        <div class="game-controls">
+          <button class="btn small" id="btn-surrender">Сдаться</button>
+          <button class="btn small" id="btn-to-menu">В меню</button>
+        </div>
+      </main>
+
+      <aside class="player-panel red" id="panel-red">
+        <div>
+          <div class="player-name">Красные</div>
+          <div class="player-tag" id="tag-red"></div>
+          <div class="char-label" id="char-red"></div>
+        </div>
+        <div class="score"><span id="score-red">0</span><small> / <span class="win-score"></span></small></div>
+        <div>
+          <div class="hand-label">Рука</div>
+          <div class="hand" id="hand-red"></div>
+        </div>
+        <button class="ability-btn" id="ability-red"></button>
+        <div class="quiet" id="quiet-red"></div>
+      </aside>
+    </div>
+    <div class="log" id="log"></div>
+  </section>
+
+  <!-- ПОБЕДА -->
+  <section id="screen-victory" class="screen">
+    <div class="panel victory">
+      <h2 id="victory-title"></h2>
+      <p id="victory-reason"></p>
+      <div class="final-scores">
+        <div class="fs blue">Синие: <b id="final-blue"></b></div>
+        <div class="fs red">Красные: <b id="final-red"></b></div>
+      </div>
+      <div class="menu-buttons">
+        <button class="btn primary" id="btn-again">Играть снова</button>
+        <button class="btn" id="btn-victory-menu">В меню</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ОКНО ПОДТВЕРЖДЕНИЯ -->
+  <div class="modal" id="confirm">
+    <div class="panel modal-box">
+      <p id="confirm-text"></p>
+      <div class="modal-buttons">
+        <button class="btn" id="confirm-no">Отмена</button>
+        <button class="btn primary" id="confirm-yes">Да</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script type="module" src="./src/main.ts"></script>
+</body>
+</html>

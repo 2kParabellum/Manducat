@@ -1,0 +1,25 @@
+{
+  "name": "manducat",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w @manducat/client",
+    "build": "npm run build -w @manducat/client",
+    "preview": "npm run preview -w @manducat/client",
+    "test": "vitest run",
+    "typecheck": "tsc -p packages/core && tsc -p packages/ai && tsc -p apps/client && tsc -p tools",
+    "sim": "tsx tools/sim.ts",
+    "check": "npm run typecheck && npm test"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0",
+    "vite": "^8.0.0",
+    "vitest": "^5.0.0"
+  }
+}
