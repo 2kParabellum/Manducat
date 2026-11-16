@@ -14,7 +14,8 @@
     "typecheck": "tsc -p packages/core && tsc -p packages/ai && tsc -p apps/client && tsc -p tools",
     "sim": "tsx tools/sim.ts",
     "check": "npm run typecheck && npm test",
-    "build:single": "npm run build && node tools/inline-build.mjs"
+    "build:single": "npm run build && node tools/inline-build.mjs",
+    "pages": "npm run build && node tools/inline-build.mjs index.html"
   },
   "devDependencies": {
     "@types/node": "^22.20.5",

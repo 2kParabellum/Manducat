@@ -11,6 +11,11 @@ npm run dev       # http://localhost:5173
 
 Сборка: `npm run build` → `apps/client/dist` (статические файлы для веб-сервера). `npm run build:single` → `apps/client/dist-single/index.html` — всё в одном файле.
 
+## GitHub Pages
+
+Игра публикуется из корня ветки `main`: `index.html` в корне — готовая сборка в один файл.
+После изменений в коде пересобрать её: `npm run pages` — и закоммитить `index.html`.
+
 ## Разработка
 
 - `npm test` — тесты правил, вида игрока и ботов
