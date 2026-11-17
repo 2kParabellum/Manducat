@@ -1,4 +1,4 @@
-// Локальная партия: «правда» живёт в браузере, соперник — бот или второй человек за этим же экраном.
+// Local game: the "truth" lives in the browser, the opponent is a bot or a second person at the same screen.
 import { ABILITIES, applyAction, createGame, getPlayerView, isLegalAction, opponent, randomSeed, redactEvents, resign } from '@manducat/core';
 import type { Action, CharacterId, GameEvent, GameState, PerPlayer, Player } from '@manducat/core';
 import { createBot } from '@manducat/ai';
@@ -8,7 +8,7 @@ import type { GameSession, SessionInfo, SessionUpdate } from './types';
 export interface LocalSetup {
   mode: 'ai' | 'hotseat';
   chars: PerPlayer<CharacterId>;
-  /** Цвет человека в игре против ИИ. */
+  /** Human's color in a game against the AI. */
   humanColor?: Player;
   difficulty?: Difficulty;
   seed?: number;
@@ -67,7 +67,7 @@ export class LocalSession implements GameSession {
     this.listeners.clear();
   }
 
-  // Двое за одним экраном — отладочный режим: видно всё, включая мины и разведку.
+  // Hot-seat is a debug mode: everything is visible, including mines and scouting.
   private get reveal(): boolean { return this.info.mode === 'hotseat'; }
   private get viewer(): Player | null { return this.info.mode === 'ai' ? this.info.localSeats[0] : null; }
   private view() { return getPlayerView(this.state, this.viewer, { revealSecrets: this.reveal }); }
@@ -98,7 +98,7 @@ export class LocalSession implements GameSession {
     this.timer = setTimeout(() => {
       this.timer = null;
       if (this.disposed || this.state.result) return;
-      // TODO: перенести расчёт в Web Worker, чтобы «Сложный» не подвешивал интерфейс
+      // TODO: move the search into a Web Worker so Hard doesn't freeze the UI
       const action = bot.chooseAction(getPlayerView(this.state, bot.player));
       this.play(action);
     }, BOT_THINK_MS);

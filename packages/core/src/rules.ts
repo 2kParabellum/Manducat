@@ -1,10 +1,10 @@
-// Какие действия возможны в позиции.
+// Which actions are possible in a position.
 import { ABILITIES, abilityOf } from './abilities';
 import { DIRS, RAYS, idx, inside, rc } from './board';
 import { canBeat } from './pieces';
 import type { AbilityId, Action, Cell, GameCore, Player } from './types';
 
-/** Соседние пустые клетки, куда можно сдвинуть карту. */
+/** Adjacent empty cells a card can move to. */
 export function moveTargets(board: readonly Cell[], i: number): number[] {
   const [r, c] = rc(i);
   const res: number[] = [];
@@ -15,7 +15,7 @@ export function moveTargets(board: readonly Cell[], i: number): number[] {
   return res;
 }
 
-/** Кого может съесть карта в клетке i: первая карта по прямой (как ладья), открытая, вражеская, по силе. */
+/** What the card at i can capture: the first card along a line (rook-like), face up, enemy, by strength. */
 export function attackTargets(board: readonly Cell[], i: number): number[] {
   const me = board[i];
   if (!me || !me.faceUp) return [];
@@ -48,8 +48,8 @@ export const abilityReady = (g: GameCore, p: Player): boolean =>
   abilityOf(g.chars[p]) !== null && g.cooldown[p] === 0;
 
 /**
- * Все возможные действия игрока.
- * abilityFilter — какие способности учитывать (ИИ в глубине перебора отбрасывает «информационные»).
+ * All possible actions of a player.
+ * abilityFilter — which abilities to consider (the AI drops the "informational" ones deep in the search).
  */
 export function listActions(g: GameCore, player: Player, abilityFilter?: (kind: AbilityId) => boolean): Action[] {
   const board = g.board;
@@ -75,7 +75,7 @@ export function listActions(g: GameCore, player: Player, abilityFilter?: (kind: 
 
 const actionKey = (a: Action): string => JSON.stringify(a);
 
-/** Проверка хода перед применением (сервер обязан проверять всё, что присылает клиент). */
+/** Validates an action before applying it (a server must validate everything a client sends). */
 export function isLegalAction(g: GameCore, player: Player, a: Action): boolean {
   if (g.result || g.turn !== player) return false;
   const key = actionKey(a);

@@ -1,4 +1,4 @@
-// Турнир ботов для балансировки. Пример:
+// Bot tournament for balancing. Example:
 //   npm run sim -- --games 20 --a normal:miner --b normal:jack
 import { CHARACTER_IDS } from '@manducat/core';
 import type { CharacterId } from '@manducat/core';
@@ -22,5 +22,5 @@ const b = side(arg('b', 'easy:jack'));
 const seed = Number(arg('seed', '1'));
 const s = playSeries(games, a, b, seed);
 console.log(`${a.difficulty}:${a.char} vs ${b.difficulty}:${b.char} — ${s.winsA}:${s.winsB}` +
-  (s.unfinished ? ` (не доиграно ${s.unfinished})` : ''));
+  (s.unfinished ? ` (unfinished ${s.unfinished})` : ''));
 console.log(JSON.stringify({ reasons: s.reasons, abilities: s.abilities, avgMoves: s.avgMoves, avgMs: s.avgMs, maxMs: s.maxMs }));

@@ -1,12 +1,12 @@
-// Тексты и иконки персонажей. Механика — в @manducat/core (abilities.ts).
+// Character texts and icons. Mechanics live in @manducat/core (abilities.ts).
 import type { CharacterId, RulesConfig } from '@manducat/core';
 
 export interface CharacterInfo {
   name: string;
   icon: string;
-  /** Название способности на кнопке. */
+  /** Ability name on the button. */
   verb?: string;
-  /** Подсказка при выборе цели. */
+  /** Hint while choosing a target. */
   hint?: string;
   desc(rules: RulesConfig): string;
 }
@@ -14,31 +14,33 @@ export interface CharacterInfo {
 export const CHARACTER_INFO: Readonly<Record<CharacterId, CharacterInfo>> = {
   jack: {
     name: 'Jack', icon: '🃏',
-    desc: () => 'Без способностей — классическая игра.',
+    desc: () => 'No ability — the classic game.',
   },
   scout: {
-    name: 'Scout', icon: '🔍', verb: 'Разведка',
-    hint: 'Выберите область 2×2 для разведки',
-    desc: () => 'Подсматривает 4 карты (область 2×2) незаметно для соперника — на 3 секунды, дальше нужно помнить. Находит мины.',
+    name: 'Scout', icon: '🔍', verb: 'Scout',
+    hint: 'Choose a 2×2 area to scout',
+    desc: () => 'Secretly peeks at 4 cards (a 2×2 area) for 3 seconds — then you have to remember them. Reveals mines.',
   },
   poisoner: {
-    name: 'Poisoner', icon: '☠️', verb: 'Яд',
-    hint: 'Выберите свою открытую карту для яда',
-    desc: r => `Отравляет свою открытую карту на ${r.effectTurns} ходов соперника. Кто её съест — погибнет сам (очки за него получает Poisoner).`,
+    name: 'Poisoner', icon: '☠️', verb: 'Poison',
+    hint: 'Choose your face-up card to poison',
+    desc: r => `Poisons your face-up card for ${r.effectTurns} opponent turns. Whoever captures it dies too (the Poisoner scores for the attacker).`,
   },
   witch: {
-    name: 'Witch', icon: '🔮', verb: 'Порча',
-    hint: 'Выберите карту соперника для порчи (не 1 и не M)',
-    desc: () => 'Снижает силу и очки карты соперника на 1 (складывается). Порча снимается, когда карта кого-нибудь съест. Нельзя на 1 и M. Единица всё равно бьёт проклятую 8.',
+    name: 'Witch', icon: '🔮', verb: 'Curse',
+    hint: 'Choose an enemy card to curse (not 1 or M)',
+    desc: () => 'Lowers an enemy card\'s strength and points by 1 (stacks). The curse is lifted when the card captures. Not on 1 or M. A 1 still beats a cursed 8.',
   },
   miner: {
-    name: 'Miner', icon: '💣', verb: 'Мина',
-    hint: 'Выберите пустую клетку для мины',
-    desc: () => 'Минирует пустую клетку. Мину видит только он. Любая фигура, вставшая на мину, погибает (мина одноразовая). Щит не спасает.',
+    name: 'Miner', icon: '💣', verb: 'Mine',
+    hint: 'Choose an empty cell to mine',
+    desc: () => 'Mines an empty cell. Only the Miner sees it. Any piece that steps on it dies (single use). Shields don\'t help.',
   },
   defender: {
-    name: 'Defender', icon: '🛡️', verb: 'Щит',
-    hint: 'Выберите свою открытую карту для щита',
-    desc: r => `Даёт своей карте щит на ${r.effectTurns} ходов соперника. Щит отражает атаку (атакующий остаётся на месте) и ломается. Яд и мина пробивают щит.`,
+    name: 'Defender', icon: '🛡️', verb: 'Shield',
+    hint: 'Choose your face-up card to shield',
+    desc: r => `Shields your card for ${r.effectTurns} opponent turns. The shield reflects one attack (the attacker stays in place) and breaks. Poison and mines go through it.`,
   },
 };
+
+export const charLabel = (c: CharacterId): string => `${CHARACTER_INFO[c].icon} ${CHARACTER_INFO[c].name}`;

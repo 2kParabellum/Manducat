@@ -1,23 +1,23 @@
-// Статическая оценка позиции. Веса подобраны матчами ИИ против ИИ (npm run sim).
+// Static position evaluation. Weights were tuned with AI vs AI matches (npm run sim).
 import { BIT, COL, NEIGHBORS, PLAYERS, ROW, abilityOf, attackTargets, canBeat, opponent, piecePoints } from '@manducat/core';
 import type { Piece, Player, UnitValue } from '@manducat/core';
 import type { SimState } from './belief';
 
 export const W = {
-  /** «Боевая ценность» открытой карты на поле. */
+  /** Combat value of a face-up card on the board. */
   power: { '1': 1.0, '2': 0.5, '3': 0.8, '5': 1.3, '8': 2.0, 'M': 2.5 } as Record<UnitValue, number>,
-  handM: 2.5,         // M в руке
-  tmThreat: 0.85,     // взятие, доступное тому, кто сейчас ходит
-  otherThreat: 0.35,  // угроза от того, кто не ходит
-  approach: 0.25,     // тянуться к картам, которые можем съесть
-  winRush: 12,        // насколько дороже очки при приближении к победе
-  stall: 0.35,        // штраф за каждый «тихий» ход подряд
-  repeat: 1.5,        // штраф за повтор позиции
-  ability: 1.5,       // ценность готовой способности (не тратить зря)
-  mine: 1.2,          // своя мина на поле
-  mineAdj: 0.6,       // ...и за каждую вражескую фигуру рядом с ней
-  scoutCard: 0.8,     // разведка: за каждую неизвестную карту в области
-  scoutMine: 3,       // разведка: за вероятную мину в области
+  handM: 2.5,         // M in hand
+  tmThreat: 0.85,     // capture available to the side to move
+  otherThreat: 0.35,  // threat from the side not to move
+  approach: 0.25,     // move towards cards we can capture
+  winRush: 12,        // how much more points are worth near victory
+  stall: 0.35,        // penalty per quiet move in a row
+  repeat: 1.5,        // penalty for repeating a position
+  ability: 1.5,       // value of a ready ability (don't waste it)
+  mine: 1.2,          // own mine on the board
+  mineAdj: 0.6,       // ...plus per enemy piece next to it
+  scoutCard: 0.8,     // scout: per unknown card in the area
+  scoutMine: 3,       // scout: per likely mine in the area
 };
 
 export const WIN_VALUE = 1e6;
@@ -27,7 +27,7 @@ function scoreValue(x: number, winScore: number): number {
   return x + W.winRush * r * r * r;
 }
 
-// Горячая функция: без замыканий и лишних аллокаций.
+// Hot function: no closures, no extra allocations.
 export function evaluate(s: SimState, me: Player): number {
   const opp = opponent(me);
   const b = s.board, R = s.rules;
@@ -38,8 +38,8 @@ export function evaluate(s: SimState, me: Player): number {
     if (abilityOf(s.chars[p])) v += (p === me ? 1 : -1) * W.ability * (1 - s.cooldown[p] / R.abilityCooldown);
   }
 
-  const gain = { blue: 0, red: 0 };   // лучшее доступное взятие (очки + выбитая боевая ценность)
-  const pts = { blue: 0, red: 0 };    // лучшее взятие в чистых очках
+  const gain = { blue: 0, red: 0 };   // best available capture (points + removed combat value)
+  const pts = { blue: 0, red: 0 };    // best capture in pure points
   const open: number[] = [];
   for (let i = 0; i < b.length; i++) {
     const c = b[i];
@@ -68,7 +68,7 @@ export function evaluate(s: SimState, me: Player): number {
   v += tmSign * W.tmThreat * gain[tm];
   v -= tmSign * W.otherThreat * gain[other];
 
-  // Подтягиваться к тем, кого можем съесть
+  // Approach the cards we can capture
   for (let xi = 0; xi < open.length; xi++) {
     const x = open[xi];
     const A = b[x] as Piece;
@@ -85,7 +85,7 @@ export function evaluate(s: SimState, me: Player): number {
     }
   }
 
-  // Свои мины ценны, особенно рядом с врагами
+  // Own mines are valuable, especially next to enemies
   for (let i = 0; i < b.length; i++) {
     if (!(s.mines[i] & BIT[me]) || b[i] !== null) continue;
     let adj = 0;

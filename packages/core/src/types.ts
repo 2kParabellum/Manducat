@@ -1,5 +1,5 @@
-// Базовые типы игры. Всё здесь — простые сериализуемые данные (JSON), чтобы
-// состояние, ходы и события можно было передавать по сети и сохранять.
+// Basic game types. Everything here is plain serializable data (JSON), so that
+// state, actions and events can be sent over the network and saved.
 
 export type Player = 'blue' | 'red';
 export const PLAYERS: readonly Player[] = ['blue', 'red'];
@@ -7,37 +7,37 @@ export const opponent = (p: Player): Player => (p === 'blue' ? 'red' : 'blue');
 
 export type PerPlayer<T> = Record<Player, T>;
 
-/** Номиналы карт армии. */
+/** Army card values. */
 export type UnitValue = '1' | '2' | '3' | '5' | '8' | 'M';
-/** Все номиналы, включая нейтральную G. */
+/** All values, including the neutral G. */
 export type CardValue = UnitValue | 'G';
 
-/** Что это за карта (без положения на поле). owner === null только у G. */
+/** What a card is (regardless of its position). owner === null only for G. */
 export interface CardIdentity {
   readonly owner: Player | null;
   readonly value: CardValue;
 }
 
-/** Ключ карты для подсчётов: 'blue8', 'redM', 'G'. */
+/** Card key for counting: 'blue8', 'redM', 'G'. */
 export type CardKey = string;
 
-/** Открытая карта на поле. Объекты не мутируются — при изменении создаётся новый. */
+/** A face-up card on the board. Objects are never mutated: a change creates a new one. */
 export interface Piece {
   readonly faceUp: true;
   readonly owner: Player;
   readonly value: UnitValue;
-  /** Сколько порч наложено (минус к силе и очкам). */
+  /** Number of curses (minus to strength and points). */
   readonly curse?: number;
-  /** Сколько ходов соперника осталось у яда. */
+  /** Opponent turns left on the poison. */
   readonly poison?: number;
-  /** Сколько ходов соперника осталось у щита. */
+  /** Opponent turns left on the shield. */
   readonly shield?: number;
 }
 
 /**
- * Закрытая карта. В настоящем состоянии партии (GameState) у неё заполнены owner/value,
- * в «виде игрока» (PlayerView) — нет: суть закрытой карты игрокам неизвестна.
- * known — служебное поле ИИ (карта, которую он подсмотрел).
+ * A face-down card. In the real game state (GameState) owner/value are filled in,
+ * in a player's view (PlayerView) they are not: players don't know face-down cards.
+ * known — AI-only field (a card it has peeked at).
  */
 export interface Concealed {
   readonly faceUp: false;
@@ -51,7 +51,7 @@ export type Cell = Piece | Concealed | null;
 export type AbilityId = 'scout' | 'poison' | 'curse' | 'mine' | 'shield';
 export type CharacterId = 'jack' | 'scout' | 'poisoner' | 'witch' | 'miner' | 'defender';
 
-/** Действие игрока за ход. */
+/** A player's action for the turn. */
 export type Action =
   | { type: 'flip'; i: number }
   | { type: 'move'; from: number; to: number }
@@ -64,29 +64,29 @@ export type ResultReason = 'score' | 'quiet' | 'noMoves' | 'surrender';
 export interface GameResult {
   winner: Player;
   reason: ResultReason;
-  /** quiet — кто сделал последний «тихий» ход; surrender — кто сдался. */
+  /** quiet — who made the last quiet move; surrender — who surrendered. */
   mover?: Player;
 }
 
-/** Параметры правил. Кампания сможет менять их для отдельных уровней. */
+/** Rule parameters. The campaign can change them for individual levels. */
 export interface RulesConfig {
   winScore: number;
   gPoints: number;
   mPoints: number;
   gCount: number;
-  /** Своих ходов подряд без открытий и взятий → конец партии. */
+  /** Own moves in a row without flips or captures → game over. */
   quietLimit: number;
-  /** Способность — раз в столько своих ходов. */
+  /** Ability can be used once per this many own turns. */
   abilityCooldown: number;
-  /** Яд и щит действуют столько ходов соперника. */
+  /** Poison and shield last this many opponent turns. */
   effectTurns: number;
-  /** Состав армии каждого игрока: [номинал, количество]. */
+  /** Each player's army: [value, count]. */
   army: ReadonlyArray<readonly [UnitValue, number]>;
 }
 
 /**
- * Минимальное состояние, с которым работают правила. Его же использует ИИ
- * для своих симуляций (с закрытыми картами без сути).
+ * Minimal state the rules work with. The AI uses it too
+ * for its simulations (with face-down cards of unknown identity).
  */
 export interface GameCore {
   rules: RulesConfig;
@@ -94,17 +94,17 @@ export interface GameCore {
   turn: Player;
   scores: PerPlayer<number>;
   hand: PerPlayer<number>;
-  /** Мины: битовая маска владельцев (1 — синие, 2 — красные). */
+  /** Mines: bitmask of owners (1 — blue, 2 — red). */
   mines: number[];
   cooldown: PerPlayer<number>;
   quiet: PerPlayer<number>;
   chars: PerPlayer<CharacterId>;
   result: GameResult | null;
-  /** Съеденные/погибшие карты и собранные G — публичная информация. */
+  /** Captured/killed cards and collected G — public information. */
   graveyard?: CardIdentity[];
 }
 
-/** Настоящее состояние партии («правда»). Живёт у того, кто ведёт партию: локально или на сервере. */
+/** The real game state (the "truth"). Lives with whoever hosts the game: locally or on a server. */
 export interface GameState extends GameCore {
   graveyard: CardIdentity[];
   moveNumber: number;
@@ -113,13 +113,13 @@ export interface GameState extends GameCore {
 
 export interface ScoutCell {
   i: number;
-  /** Суть закрытой карты (если клетка закрыта). */
+  /** Identity of a face-down card (if the cell is face down). */
   card?: CardIdentity;
-  /** Мины в клетке (если клетка пустая). */
+  /** Mines in the cell (if the cell is empty). */
   mines: number;
 }
 
-/** События хода — по ним интерфейс показывает анимации и сообщения, а ИИ обновляет знания. */
+/** Turn events: the UI shows animations and messages from them, the AI updates its knowledge. */
 export type GameEvent =
   | { t: 'flip'; p: Player; i: number; piece: Piece }
   | { t: 'flipG'; p: Player; i: number; pts: number }
@@ -130,8 +130,8 @@ export type GameEvent =
   | { t: 'poisonKill'; p: Player; i: number; piece: Piece; pts: number }
   | { t: 'reflect'; p: Player; from: number; to: number; attacker: Piece; victim: Piece }
   | { t: 'boom'; p: Player; i: number; piece: Piece; pts: number; by: Player }
-  /** i и target отсутствуют, если способность тайная (разведка, мина) и событие видит соперник. */
+  /** i and target are absent if the ability is secret (scout, mine) and the opponent sees the event. */
   | { t: 'ability'; p: Player; kind: AbilityId; i?: number; target?: Piece }
-  /** Результат разведки — приватное событие только для разведчика. */
+  /** Scout result — a private event only for the scout. */
   | { t: 'scout'; p: Player; cells: ScoutCell[] }
   | { t: 'end'; result: GameResult };

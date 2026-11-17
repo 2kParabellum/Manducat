@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,89 +7,167 @@
 </head>
 <body>
 
-  <!-- МЕНЮ -->
+  <!-- MENU -->
   <section id="screen-menu" class="screen active">
     <h1 class="logo">Manducat</h1>
     <div class="menu-buttons">
-      <button class="btn primary" id="btn-vs-ai">Играть против ИИ</button>
-      <button class="btn" id="btn-pvp">Играть вдвоём</button>
-      <button class="btn" id="btn-rules">Правила</button>
+      <button class="btn primary" id="btn-campaign">Campaign</button>
+      <button class="btn" id="btn-vs-ai">Quick game</button>
+      <button class="btn" id="btn-deck">Deck</button>
+      <button class="btn" id="btn-rules">Rules</button>
+      <div class="menu-row">
+        <button class="btn small" id="btn-pvp">Hot-seat (debug)</button>
+        <button class="btn small" id="btn-settings">Settings</button>
+      </div>
     </div>
   </section>
 
-  <!-- НАСТРОЙКА ПАРТИИ -->
+  <!-- CAMPAIGN MAP -->
+  <section id="screen-campaign" class="screen top">
+    <div class="screen-head">
+      <button class="btn small" id="btn-campaign-back">← Menu</button>
+      <h2>Campaign</h2>
+      <span class="head-note" id="campaign-progress"></span>
+    </div>
+    <div class="map" id="campaign-map"></div>
+  </section>
+
+  <!-- LEVEL BRIEFING -->
+  <section id="screen-level" class="screen">
+    <div class="panel level">
+      <h2 id="level-title"></h2>
+      <div class="level-meta" id="level-meta"></div>
+      <div class="opt-title">Opponent</div>
+      <div id="level-opponent"></div>
+      <div class="opt-title" id="level-you-title"></div>
+      <div id="level-you"></div>
+      <p class="hint" id="level-note"></p>
+      <div class="menu-buttons row">
+        <button class="btn" id="btn-level-back">Back</button>
+        <button class="btn" id="btn-level-deck">Edit deck</button>
+        <button class="btn primary" id="btn-level-play">Play</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- DECK -->
+  <section id="screen-deck" class="screen top">
+    <div class="panel deck">
+      <h2>Deck</h2>
+      <p class="hint">Pick three characters. Jack can be picked several times. Tap a slot, then a character.</p>
+      <div class="deck-slots" id="deck-slots"></div>
+      <p class="hint">Game 1 is played with slot #1. After each game the winner keeps their character, the loser moves on to the next slot.</p>
+      <div class="deck-chars" id="deck-chars"></div>
+      <div class="menu-buttons row">
+        <button class="btn" id="btn-deck-back">Back</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="screen-settings" class="screen">
+    <div class="panel settings">
+      <h2>Settings</h2>
+      <div class="opt-title">Campaign</div>
+      <p id="settings-progress"></p>
+      <div class="menu-buttons">
+        <button class="btn danger" id="btn-reset">Reset campaign</button>
+        <button class="btn" id="btn-unlock">Unlock everything</button>
+        <button class="btn" id="btn-settings-back">Back</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- QUICK GAME SETUP -->
   <section id="screen-setup" class="screen">
     <div class="panel setup">
       <h2 id="setup-title"></h2>
       <div id="setup-ai-opts">
-        <div class="opt-title">Ваш цвет</div>
-        <div class="opt-group" data-opt="color">
-          <button class="opt" data-value="blue">Синие<small>ходят первыми</small></button>
-          <button class="opt" data-value="red">Красные<small>ходят вторыми</small></button>
-          <button class="opt" data-value="random">Случайно<small>&nbsp;</small></button>
+        <div class="opt-title">Format</div>
+        <div class="opt-group" data-opt="format">
+          <button class="opt" data-value="1">Single<small>one game</small></button>
+          <button class="opt" data-value="3">Bo3<small>first to 2</small></button>
+          <button class="opt" data-value="5">Bo5<small>first to 3</small></button>
         </div>
-        <div class="opt-title">Сложность</div>
+        <div class="opt-title">Difficulty</div>
         <div class="opt-group" data-opt="difficulty">
-          <button class="opt" data-value="easy">Лёгкий<small>часто ошибается</small></button>
-          <button class="opt" data-value="normal">Средний<small>на 2 хода</small></button>
-          <button class="opt" data-value="hard">Сложный<small>на 3 хода</small></button>
+          <button class="opt" data-value="easy">Easy<small>makes mistakes</small></button>
+          <button class="opt" data-value="normal">Normal<small>2 moves ahead</small></button>
+          <button class="opt" data-value="hard">Hard<small>3 moves ahead</small></button>
+        </div>
+        <div id="color-block">
+          <div class="opt-title">Your color</div>
+          <div class="opt-group" data-opt="color">
+            <button class="opt" data-value="blue">Blue<small>moves first</small></button>
+            <button class="opt" data-value="red">Red<small>moves second</small></button>
+            <button class="opt" data-value="random">Random<small>&nbsp;</small></button>
+          </div>
         </div>
       </div>
-      <div class="opt-title" id="char-a-title"></div>
-      <div class="char-grid" data-opt="charA"></div>
-      <div class="char-desc" id="char-a-desc"></div>
-      <div class="opt-title" id="char-b-title"></div>
-      <div class="char-grid" data-opt="charB"></div>
-      <div class="char-desc" id="char-b-desc"></div>
-      <div class="menu-buttons">
-        <button class="btn" id="btn-setup-back">Назад</button>
-        <button class="btn primary" id="btn-setup-start">Начать</button>
+      <div id="chars-block">
+        <div class="opt-title" id="char-a-title"></div>
+        <div class="char-grid" data-opt="charA"></div>
+        <div class="char-desc" id="char-a-desc"></div>
+        <div class="opt-title" id="char-b-title"></div>
+        <div class="char-grid" data-opt="charB"></div>
+        <div class="char-desc" id="char-b-desc"></div>
+      </div>
+      <div id="series-block">
+        <div class="opt-title">Your deck</div>
+        <div id="series-deck"></div>
+        <p class="hint">The AI gets a random deck. Colors are random every game.</p>
+        <button class="btn small" id="btn-setup-deck">Edit deck</button>
+      </div>
+      <div class="menu-buttons row">
+        <button class="btn" id="btn-setup-back">Back</button>
+        <button class="btn primary" id="btn-setup-start">Start</button>
       </div>
     </div>
   </section>
 
-  <!-- ПРАВИЛА -->
+  <!-- RULES -->
   <section id="screen-rules" class="screen">
     <div class="panel rules">
-      <h2>Правила</h2>
+      <h2>Rules</h2>
       <ul>
-        <li>Поле 6×6, все карты лежат рубашкой вверх.</li>
-        <li>У каждого игрока армия: <b>1</b>×4, <b>2</b>×3, <b>3</b>×3, <b>5</b>×2, <b>8</b>×2, <b>M</b>×1. Плюс 6 нейтральных карт <b>G</b>.</li>
-        <li>За ход можно сделать <b>одно</b> действие:
+        <li>6×6 board, all cards start face down.</li>
+        <li>Each player's army: <b>1</b>×4, <b>2</b>×3, <b>3</b>×3, <b>5</b>×2, <b>8</b>×2, <b>M</b>×1. Plus 6 neutral <b>G</b> cards.</li>
+        <li>On your turn you make <b>one</b> action:
           <ol>
-            <li><b>Открыть</b> любую закрытую карту.</li>
-            <li><b>Съесть</b> своей открытой картой открытую карту соперника по прямой (как ладья), если между ними нет карт. Есть можно только равные или более слабые карты. <b>1</b> бьёт <b>8</b>. <b>M</b> бьёт всех, и <b>M</b> бьют все.</li>
-            <li><b>Сдвинуть</b> свою открытую карту на соседнюю пустую клетку (вверх/вниз/влево/вправо).</li>
-            <li><b>Выложить M</b> из руки на любую пустую клетку.</li>
-            <li><b>Применить способность</b> персонажа (раз в <span class="ability-cd"></span> своих ходов).</li>
+            <li><b>Flip</b> any face-down card.</li>
+            <li><b>Capture</b> an enemy face-up card with your face-up card along a straight line (like a rook) with no cards in between. You can capture equal or weaker cards only. <b>1</b> beats <b>8</b>. <b>M</b> beats everyone and everyone beats <b>M</b>.</li>
+            <li><b>Move</b> your face-up card to an adjacent empty cell (up/down/left/right).</li>
+            <li><b>Place M</b> from your hand on any empty cell.</li>
+            <li><b>Use your character's ability</b> (once per <span class="ability-cd"></span> own turns).</li>
           </ol>
         </li>
-        <li>Открытая <b>M</b> уходит в руку игроку её цвета.</li>
-        <li>Открытая <b>G</b> даёт <b>+3</b> очка открывшему и снимается с поля.</li>
-        <li>За съеденную карту даётся очков по её силе (M = <span id="rules-m-points"></span>).</li>
-        <li>Побеждает тот, кто первым наберёт <b><span id="rules-win-score"></span></b> очков.</li>
-        <li>Если у игрока набралось <b><span class="quiet-limit"></span> ходов подряд</b> без открытий и взятий — партия заканчивается: побеждает тот, у кого больше очков, а при равенстве проигрывает сделавший этот ход.</li>
-        <li>Если у игрока в его ход нет ни одного возможного действия — он проигрывает.</li>
+        <li>A flipped <b>M</b> goes to the hand of the player of its color.</li>
+        <li>A flipped <b>G</b> gives <b>+3</b> points to whoever flipped it and leaves the board.</li>
+        <li>A captured card gives points equal to its strength (M = <span id="rules-m-points"></span>).</li>
+        <li>The first player to reach <b><span id="rules-win-score"></span></b> points wins.</li>
+        <li>If a player makes <b><span class="quiet-limit"></span> moves in a row</b> without flips or captures, the game ends: more points wins; on a tie, whoever made that move loses.</li>
+        <li>A player with no possible action on their turn loses.</li>
+        <li><b>Series</b> (Bo3, Bo5): game 1 is played with deck slot #1. The winner of a game keeps their character, the loser switches to the next one in their deck.</li>
       </ul>
-      <h3>Персонажи</h3>
+      <h3>Characters</h3>
       <ul id="rules-chars"></ul>
-      <p class="hint">Управление: клик по закрытой карте — открыть. Клик по своей карте — выбрать, затем клик по подсвеченной клетке. Кнопка способности — в панели игрока. Esc / правый клик — отменить выбор.</p>
-      <button class="btn" id="btn-rules-back">Назад</button>
+      <p class="hint">Controls: tap a face-down card to flip it. Tap your card to select it, then tap a highlighted cell. The ability button is in your player panel. Esc / right click cancels the selection.</p>
+      <button class="btn" id="btn-rules-back">Back</button>
     </div>
   </section>
 
-  <!-- ИГРА -->
+  <!-- GAME -->
   <section id="screen-game" class="screen">
     <div class="game-layout">
       <aside class="player-panel blue" id="panel-blue">
         <div>
-          <div class="player-name">Синие</div>
+          <div class="player-name">Blue</div>
           <div class="player-tag" id="tag-blue"></div>
           <div class="char-label" id="char-blue"></div>
         </div>
         <div class="score"><span id="score-blue">0</span><small> / <span class="win-score"></span></small></div>
         <div>
-          <div class="hand-label">Рука</div>
+          <div class="hand-label">Hand</div>
           <div class="hand" id="hand-blue"></div>
         </div>
         <button class="ability-btn" id="ability-blue"></button>
@@ -97,24 +175,25 @@
       </aside>
 
       <main class="center">
+        <div class="series-bar" id="series-bar"></div>
         <div class="turn-indicator" id="turn-indicator"></div>
         <div class="hint-line" id="hint-line"></div>
         <div class="board" id="board"></div>
         <div class="game-controls">
-          <button class="btn small" id="btn-surrender">Сдаться</button>
-          <button class="btn small" id="btn-to-menu">В меню</button>
+          <button class="btn small" id="btn-surrender">Surrender</button>
+          <button class="btn small" id="btn-to-menu">Menu</button>
         </div>
       </main>
 
       <aside class="player-panel red" id="panel-red">
         <div>
-          <div class="player-name">Красные</div>
+          <div class="player-name">Red</div>
           <div class="player-tag" id="tag-red"></div>
           <div class="char-label" id="char-red"></div>
         </div>
         <div class="score"><span id="score-red">0</span><small> / <span class="win-score"></span></small></div>
         <div>
-          <div class="hand-label">Рука</div>
+          <div class="hand-label">Hand</div>
           <div class="hand" id="hand-red"></div>
         </div>
         <button class="ability-btn" id="ability-red"></button>
@@ -124,29 +203,37 @@
     <div class="log" id="log"></div>
   </section>
 
-  <!-- ПОБЕДА -->
+  <!-- GAME RESULT -->
   <section id="screen-victory" class="screen">
     <div class="panel victory">
+      <div class="victory-kicker" id="victory-kicker"></div>
       <h2 id="victory-title"></h2>
       <p id="victory-reason"></p>
       <div class="final-scores">
-        <div class="fs blue">Синие: <b id="final-blue"></b></div>
-        <div class="fs red">Красные: <b id="final-red"></b></div>
+        <div class="fs blue">Blue: <b id="final-blue"></b></div>
+        <div class="fs red">Red: <b id="final-red"></b></div>
       </div>
-      <div class="menu-buttons">
-        <button class="btn primary" id="btn-again">Играть снова</button>
-        <button class="btn" id="btn-victory-menu">В меню</button>
-      </div>
+      <div class="series-result" id="series-result"></div>
+      <div class="menu-buttons" id="victory-buttons"></div>
     </div>
   </section>
 
-  <!-- ОКНО ПОДТВЕРЖДЕНИЯ -->
+  <!-- DIALOGS -->
   <div class="modal" id="confirm">
     <div class="panel modal-box">
       <p id="confirm-text"></p>
       <div class="modal-buttons">
-        <button class="btn" id="confirm-no">Отмена</button>
-        <button class="btn primary" id="confirm-yes">Да</button>
+        <button class="btn" id="confirm-no">Cancel</button>
+        <button class="btn primary" id="confirm-yes">Yes</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="info">
+    <div class="panel modal-box">
+      <div id="info-body"></div>
+      <div class="modal-buttons">
+        <button class="btn primary" id="info-ok">OK</button>
       </div>
     </div>
   </div>

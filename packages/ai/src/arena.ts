@@ -1,4 +1,4 @@
-// Матчи бот против бота — для тестов и балансировки (npm run sim).
+// Bot vs bot matches — for tests and balancing (npm run sim).
 import { applyAction, createGame, getPlayerView, isLegalAction, redactEvents } from '@manducat/core';
 import type { AbilityId, CharacterId, GameResult, PerPlayer, Player, ResultReason } from '@manducat/core';
 import { createBot } from './bot';
@@ -49,7 +49,7 @@ export function playMatch(setup: MatchSetup): MatchResult {
 
 export interface SeriesSummary {
   games: number;
-  /** Победы первого участника (A) и второго (B). Цвета чередуются. */
+  /** Wins of the first participant (A) and the second (B). Colors alternate. */
   winsA: number;
   winsB: number;
   unfinished: number;

@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  base: './',          // относительные пути: сборку можно открыть с любого адреса и завернуть в мобильное приложение
+  base: './',          // relative paths: the build can be opened from any URL and wrapped into a mobile app
   build: { target: 'es2022' },
 });

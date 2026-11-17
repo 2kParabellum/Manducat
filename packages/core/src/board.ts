@@ -1,11 +1,11 @@
-// Геометрия поля 6×6. Клетки нумеруются 0..35 построчно.
+// 6×6 board geometry. Cells are numbered 0..35 row by row.
 import type { Player } from './types';
 
 export const SIZE = 6;
 export const CELLS = SIZE * SIZE;
 export const DIRS: ReadonlyArray<readonly [number, number]> = [[0, 1], [0, -1], [1, 0], [-1, 0]];
 
-/** Владельцы мин — битовая маска. */
+/** Mine owners as a bitmask. */
 export const BIT: Readonly<Record<Player, number>> = { blue: 1, red: 2 };
 
 export const rc = (i: number): [number, number] => [Math.floor(i / SIZE), i % SIZE];
@@ -16,11 +16,11 @@ export const coordName = (i: number): string => {
   return 'ABCDEF'[c] + (r + 1);
 };
 
-/** Строка и столбец каждой клетки (таблицы для горячих циклов ИИ). */
+/** Row and column of every cell (lookup tables for the AI's hot loops). */
 export const ROW: readonly number[] = Array.from({ length: CELLS }, (_, i) => Math.floor(i / SIZE));
 export const COL: readonly number[] = Array.from({ length: CELLS }, (_, i) => i % SIZE);
 
-/** Лучи от клетки в 4 стороны (для атаки «как ладья»), от ближней клетки к дальней. */
+/** Rays from a cell in 4 directions (for rook-like attacks), nearest cell first. */
 export const RAYS: ReadonlyArray<ReadonlyArray<readonly number[]>> = Array.from({ length: CELLS }, (_, i) =>
   DIRS.map(([dr, dc]) => {
     const ray: number[] = [];
@@ -28,7 +28,7 @@ export const RAYS: ReadonlyArray<ReadonlyArray<readonly number[]>> = Array.from(
     return ray;
   }));
 
-/** Соседи по горизонтали и вертикали. */
+/** Horizontal and vertical neighbours. */
 export const NEIGHBORS: ReadonlyArray<readonly number[]> = Array.from({ length: CELLS }, (_, i) => {
   const [r, c] = rc(i);
   return DIRS.map(([dr, dc]) => [r + dr, c + dc] as const)
@@ -36,10 +36,10 @@ export const NEIGHBORS: ReadonlyArray<readonly number[]> = Array.from({ length: 
     .map(([a, b]) => idx(a, b));
 });
 
-/** Область 2×2 разведки по левому верхнему углу. */
+/** The 2×2 scout area by its top-left corner. */
 export const scoutArea = (i: number): number[] => [i, i + 1, i + SIZE, i + SIZE + 1];
 
-/** Левый верхний угол области 2×2, которая начинается в клетке i (прижатой к краю поля). */
+/** Top-left corner of the 2×2 area starting at cell i (clamped to the board edge). */
 export const scoutCorner = (i: number): number => {
   const [r, c] = rc(i);
   return idx(Math.min(r, SIZE - 2), Math.min(c, SIZE - 2));

@@ -1,5 +1,5 @@
-// Что ИИ знает сверх «вида игрока»: подсмотренные карты, где могут стоять вражеские мины,
-// какие позиции уже встречались. Обновляется только по тому, что ИИ имеет право видеть.
+// What the AI knows beyond its player view: peeked cards, where enemy mines may be,
+// which positions have already occurred. Updated only from what the AI is allowed to see.
 import { BIT, NEIGHBORS, keyOf, opponent } from '@manducat/core';
 import type { CardKey, GameCore, GameEvent, Player, PlayerView } from '@manducat/core';
 
@@ -13,13 +13,13 @@ export function positionKey(g: GameCore): string {
 }
 
 export class Knowledge {
-  /** Подсмотренные закрытые карты: клетка → карта. */
+  /** Peeked face-down cards: cell → card. */
   readonly known = new Map<number, CardKey>();
-  /** По одному набору «клетка → вес» на каждую вражескую мину с неизвестным местом. */
+  /** One "cell → weight" set per enemy mine with an unknown location. */
   mineSets: Map<number, number>[] = [];
-  /** Вражеские мины, место которых известно точно. */
+  /** Enemy mines whose location is known exactly. */
   readonly knownMines = new Set<number>();
-  /** Сколько раз встречалась позиция (против бесконечного топтания). */
+  /** How many times a position occurred (against endless shuffling). */
   readonly positions = new Map<string, number>();
   private prevMines: number[] | null = null;
 
@@ -59,7 +59,7 @@ export class Knowledge {
     this.positions.set(key, (this.positions.get(key) ?? 0) + 1);
   }
 
-  /** Вероятность вражеской мины в каждой клетке. */
+  /** Probability of an enemy mine in each cell. */
   risk(cells: number): Float64Array {
     const risk = new Float64Array(cells);
     for (let i = 0; i < cells; i++) {
@@ -71,14 +71,14 @@ export class Knowledge {
     return risk;
   }
 
-  /** Кто-то встал на клетку X: если без взрыва — мины там нет; если со взрывом не на моей мине — это была вражеская. */
+  /** Someone entered cell X: no explosion — no mine there; explosion not on my mine — it was an enemy one. */
   private entered(X: number, events: readonly GameEvent[], prevMines: readonly number[]): void {
     const boom = events.some(e => e.t === 'boom' && e.i === X);
     if (!boom) this.clearCell(X);
     else if (!(prevMines[X] & BIT[this.me])) this.consumeMine(X);
   }
 
-  /** Соперник поставил мину: она где-то среди пустых клеток, вероятнее — на пути моих фигур. */
+  /** The opponent placed a mine: it is somewhere among the empty cells, more likely in the path of my pieces. */
   private enemyMined(view: PlayerView): void {
     const cand = new Map<number, number>();
     view.board.forEach((c, i) => {
@@ -101,7 +101,7 @@ export class Knowledge {
     this.prune();
   }
 
-  /** Вычеркнуть одну неизвестную мину, которая, скорее всего, и стоит в клетке i. */
+  /** Cross out one unknown mine that most likely is the one in cell i. */
   private takeMineEvent(i: number): void {
     let best = -1, bestShare = 0;
     this.mineSets.forEach((s, k) => {

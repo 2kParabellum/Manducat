@@ -1,19 +1,19 @@
-// «Вид игрока»: что конкретный игрок имеет право знать о партии.
-// Интерфейс рисует только вид, ИИ думает только по виду, сервер отправляет игрокам только вид.
+// Player view: what a particular player is allowed to know about the game.
+// The UI draws only the view, the AI thinks only from the view, a server sends players only views.
 import { ABILITIES } from './abilities';
 import { BIT } from './board';
 import type { CardIdentity, Concealed, GameEvent, GameState, Player } from './types';
 import type { GameCore } from './types';
 
 export interface PlayerView extends GameCore {
-  /** Чей это вид; null — наблюдатель. */
+  /** Whose view this is; null — spectator. */
   viewer: Player | null;
   graveyard: CardIdentity[];
   moveNumber: number;
 }
 
 export interface ViewOptions {
-  /** Показывать все мины и тайные способности (отладочный режим «вдвоём за одним экраном»). */
+  /** Reveal all mines and secret abilities (debug hot-seat mode). */
   revealSecrets?: boolean;
 }
 
@@ -38,7 +38,7 @@ export function getPlayerView(state: GameState, viewer: Player | null, opts: Vie
   };
 }
 
-/** Убирает из событий то, что зрителю знать нельзя (цель тайной способности, чужая разведка). */
+/** Removes from events what the viewer must not know (secret ability targets, other players' scouting). */
 export function redactEvents(events: readonly GameEvent[], viewer: Player | null, opts: ViewOptions = {}): GameEvent[] {
   if (opts.revealSecrets) return events.slice();
   const res: GameEvent[] = [];

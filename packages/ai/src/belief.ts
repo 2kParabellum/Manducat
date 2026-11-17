@@ -1,14 +1,14 @@
-// Состояние партии «глазами ИИ» и быстрое применение ходов в симуляции.
+// The game state as the AI sees it, and fast action application for simulations.
 import { BIT, CELLS, applyRaw, cardOfKey, fullPool, keyOf, opponent } from '@manducat/core';
 import type { Action, CardKey, Concealed, GameCore, PlayerView } from '@manducat/core';
 import type { Knowledge } from './knowledge';
 
 export interface SimState extends GameCore {
-  /** Сколько карт каждого вида может лежать под неизвестными рубашками. */
+  /** How many cards of each kind may lie under unknown card backs. */
   pool: Record<CardKey, number>;
-  /** Сколько закрытых карт неизвестно. */
+  /** Number of unknown face-down cards. */
   hidden: number;
-  /** Вероятность вражеской мины по клеткам. */
+  /** Probability of an enemy mine per cell. */
   risk: Float64Array;
 }
 
@@ -33,7 +33,7 @@ export function makeBelief(view: PlayerView, k: Knowledge): SimState {
       return HIDDEN;
     }
     pool[keyOf(c.owner, c.value)]--;
-    return c;   // открытые карты не мутируются — можно делить
+    return c;   // face-up cards are never mutated, so they can be shared
   });
   for (const p of ['blue', 'red'] as const) pool[p + 'M'] -= view.hand[p];
   for (const g of view.graveyard) pool[keyOf(g.owner, g.value)]--;
@@ -55,7 +55,7 @@ export function makeBelief(view: PlayerView, k: Knowledge): SimState {
   };
 }
 
-/** Новое состояние после хода. key — что окажется под рубашкой при открытии неизвестной карты. */
+/** New state after an action. key — what turns out to be under the back when an unknown card is flipped. */
 export function simApply(s: SimState, a: Action, key?: CardKey, forceMine?: boolean): SimState {
   const n: SimState = {
     rules: s.rules,

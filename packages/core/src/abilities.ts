@@ -1,5 +1,5 @@
-// Персонажи и их способности. Чтобы добавить персонажа: описать способность в ABILITIES
-// (цели + применение) и добавить запись в CHARACTERS. Тексты и иконки — в клиенте.
+// Characters and their abilities. To add a character: describe its ability in ABILITIES
+// (targets + apply) and add an entry to CHARACTERS. Texts and icons live in the client.
 import { BIT, CELLS, SIZE, idx, scoutArea } from './board';
 import { identityOf, strength } from './pieces';
 import type { AbilityId, CharacterId, GameCore, GameEvent, Piece, Player } from './types';
@@ -7,11 +7,11 @@ import { opponent } from './types';
 
 export interface AbilityDef {
   readonly id: AbilityId;
-  /** Тайная способность: соперник видит только сам факт применения, без цели. */
+  /** Secret ability: the opponent only sees that it was used, not the target. */
   readonly secret: boolean;
-  /** Допустимые цели (индексы клеток). */
+  /** Valid targets (cell indices). */
   targets(g: GameCore, p: Player): number[];
-  /** Применить к клетке i. Состояние меняется на месте, события дописываются в ev. */
+  /** Apply to cell i. Mutates the state in place and appends events to ev. */
   apply(g: GameCore, p: Player, i: number, ev: GameEvent[]): void;
 }
 
@@ -66,7 +66,7 @@ export const ABILITIES: Readonly<Record<AbilityId, AbilityDef>> = {
   curse: {
     id: 'curse',
     secret: false,
-    // Нельзя на M и на карты с силой 1 (в том числе уже проклятые до единицы)
+    // Not on M and not on strength-1 cards (including ones already cursed down to 1)
     targets: (g, p) => openOf(g, opponent(p), c => c.value !== 'M' && strength(c) > 1),
     apply(g, p, i, ev) {
       const c = g.board[i] as Piece;

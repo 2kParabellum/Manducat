@@ -1,4 +1,4 @@
-// Движок: создание партии и применение ходов. Не знает ни про интерфейс, ни про сеть.
+// Engine: game creation and applying actions. Knows nothing about UI or network.
 import { ABILITIES } from './abilities';
 import { BIT, CELLS } from './board';
 import { identityOf, piecePoints } from './pieces';
@@ -14,7 +14,7 @@ export interface GameSetup {
   chars: PerPlayer<CharacterId>;
   seed: number;
   rules?: Partial<RulesConfig>;
-  /** Готовая раскладка вместо случайной (уровни кампании, тесты). */
+  /** A fixed layout instead of a random one (campaign levels, tests). */
   layout?: ReadonlyArray<CardIdentity | null>;
 }
 
@@ -52,19 +52,19 @@ export function createGame(setup: GameSetup): GameState {
 }
 
 export interface ApplyContext {
-  /** Что под рубашкой (для открытия в симуляции ИИ, где суть карт неизвестна). */
+  /** What is under the card back (for flips in AI simulations where identities are unknown). */
   card?: CardIdentity;
-  /** Симуляция ИИ: считать, что на клетке вражеская мина. */
+  /** AI simulation: assume there is an enemy mine on the cell. */
   forceMine?: boolean;
 }
 
-/** Фигура встаёт на клетку (сдвиг или выкладывание M). Возвращает true, если подорвалась. */
+/** A piece enters a cell (move or placing M). Returns true if it blew up. */
 function enterCell(g: GameCore, p: Player, i: number, piece: Piece, ctx: ApplyContext, ev: GameEvent[]): boolean {
   const m = g.mines[i];
   if (!m && !ctx.forceMine) { g.board[i] = piece; return false; }
   const enemy = opponent(piece.owner);
   const enemyMine = !!ctx.forceMine || (m & BIT[enemy]) !== 0;
-  const pts = enemyMine ? piecePoints(piece, g.rules) : 0;   // на своей мине очки не получает никто
+  const pts = enemyMine ? piecePoints(piece, g.rules) : 0;   // nobody scores for stepping on their own mine
   if (enemyMine) g.scores[enemy] += pts;
   if (m) { g.mines = g.mines.slice(); g.mines[i] = 0; }
   g.board[i] = null;
@@ -74,13 +74,13 @@ function enterCell(g: GameCore, p: Player, i: number, piece: Piece, ctx: ApplyCo
 }
 
 /**
- * Применяет действие без проверки допустимости и без проверки «нет ходов».
- * Меняет g на месте (карты на поле заменяются новыми объектами). Используется движком и ИИ.
+ * Applies an action without legality checks and without the "no moves" check.
+ * Mutates g in place (board pieces are replaced with new objects). Used by the engine and the AI.
  */
 export function applyRaw(g: GameCore, a: Action, ctx: ApplyContext = {}): GameEvent[] {
   const p = g.turn, opp = opponent(p), b = g.board, R = g.rules;
   const ev: GameEvent[] = [];
-  let loud = false;   // открытие или взятие — сбрасывает счётчик «тихих» ходов
+  let loud = false;   // flip or capture — resets the quiet-move counter
 
   switch (a.type) {
     case 'flip': {
@@ -118,7 +118,7 @@ export function applyRaw(g: GameCore, a: Action, ctx: ApplyContext = {}): GameEv
     }
     case 'attack': {
       const att = b[a.from] as Piece, vic = b[a.to] as Piece;
-      if (vic.shield) {   // щит отражает атаку и ломается; атакующий остаётся на месте
+      if (vic.shield) {   // the shield reflects the attack and breaks; the attacker stays in place
         b[a.to] = { ...vic, shield: 0 };
         ev.push({ t: 'reflect', p, from: a.from, to: a.to, attacker: att, victim: vic });
         break;
@@ -128,9 +128,9 @@ export function applyRaw(g: GameCore, a: Action, ctx: ApplyContext = {}): GameEv
       g.scores[p] += pts;
       g.graveyard?.push({ owner: vic.owner, value: vic.value });
       b[a.from] = null;
-      const moved: Piece = att.curse ? { ...att, curse: 0 } : att;   // съела — порча снята
+      const moved: Piece = att.curse ? { ...att, curse: 0 } : att;   // it captured — the curse is lifted
       ev.push({ t: 'capture', p, from: a.from, to: a.to, attacker: att, victim: vic, pts, uncursed: !!att.curse });
-      if (vic.poison) {   // съела отравленную — погибает сама (щит не спасает)
+      if (vic.poison) {   // captured a poisoned card — dies itself (a shield doesn't help)
         b[a.to] = null;
         const pp = piecePoints(moved, R);
         g.scores[opp] += pp;
@@ -151,7 +151,7 @@ export function applyRaw(g: GameCore, a: Action, ctx: ApplyContext = {}): GameEv
   if (loud) { g.quiet.blue = 0; g.quiet.red = 0; } else g.quiet[p]++;
   if (g.cooldown[p] > 0) g.cooldown[p]--;
 
-  // Яд и щит на картах соперника отсчитывают «ходы соперника»
+  // Poison and shield on the opponent's pieces count down the opponent's turns
   for (let i = 0; i < b.length; i++) {
     const c = b[i];
     if (c && c.faceUp && c.owner === opp && (c.poison || c.shield)) {
@@ -159,20 +159,20 @@ export function applyRaw(g: GameCore, a: Action, ctx: ApplyContext = {}): GameEv
     }
   }
 
-  // Конец партии
+  // Game end
   const sp = g.scores[p], so = g.scores[opp];
   if (sp >= R.winScore || so >= R.winScore) {
     const w = sp >= R.winScore && so >= R.winScore ? (sp >= so ? p : opp) : (sp >= R.winScore ? p : opp);
     g.result = { winner: w, reason: 'score' };
   } else if (g.quiet[p] >= R.quietLimit) {
-    // больше очков — победа; при равенстве проигрывает тот, кто сделал этот ход
+    // more points wins; on a tie the player who made this move loses
     g.result = { winner: sp > so ? p : opp, reason: 'quiet', mover: p };
   }
   g.turn = opp;
   return ev;
 }
 
-/** Применяет ход к настоящей партии (допустимость нужно проверить заранее через isLegalAction). */
+/** Applies an action to the real game (check legality beforehand with isLegalAction). */
 export function applyAction(state: GameState, a: Action): GameEvent[] {
   const ev = applyRaw(state, a);
   state.moveNumber++;

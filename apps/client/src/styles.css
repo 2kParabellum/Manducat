@@ -25,7 +25,7 @@ body {
 .screen { display: none; min-height: 100vh; padding: 24px; }
 .screen.active { display: flex; flex-direction: column; align-items: center; justify-content: center; }
 
-/* ---------- Кнопки / панели ---------- */
+/* ---------- Buttons / panels ---------- */
 .btn {
   background: #3a3f50;
   color: var(--text);
@@ -49,7 +49,7 @@ body {
   box-shadow: 0 10px 40px rgba(0,0,0,.4);
 }
 
-/* ---------- Меню ---------- */
+/* ---------- Menu ---------- */
 .logo {
   font-size: 72px;
   margin: 0 0 44px;
@@ -64,7 +64,7 @@ body {
 .rules li { margin: 6px 0; line-height: 1.45; }
 .rules .hint { opacity: .7; font-size: 14px; }
 
-/* ---------- Настройка партии ---------- */
+/* ---------- Game setup ---------- */
 .setup { width: min(560px, 100%); }
 .opt-title { font-size: 14px; opacity: .7; text-transform: uppercase; letter-spacing: 1px; margin: 18px 0 8px; }
 .opt-group, .char-grid { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -84,10 +84,97 @@ body {
 .char-grid .opt { flex: 0 0 calc(25% - 6px); padding: 8px 4px; font-size: 13px; }
 .char-grid .opt .ic { display: block; font-size: 22px; margin-bottom: 2px; }
 .char-desc { font-size: 13px; opacity: .8; margin-top: 8px; min-height: 34px; line-height: 1.35; }
-.setup .menu-buttons { margin-top: 24px; flex-direction: row; }
-.setup .menu-buttons .btn { flex: 1; }
+.menu-buttons.row { margin-top: 24px; flex-direction: row; min-width: 0; }
+.menu-buttons.row .btn { flex: 1; padding-left: 10px; padding-right: 10px; font-size: 16px; }
+#series-block .btn { margin-top: 4px; }
 
-/* ---------- Игра ---------- */
+/* ---------- Menu extras, common ---------- */
+.menu-row { display: flex; gap: 10px; }
+.menu-row .btn { flex: 1; }
+.btn.danger { background: #8f2b27; }
+.btn.danger:hover { background: #a8352f; }
+.screen.top.active { justify-content: flex-start; }
+.hint { opacity: .7; font-size: 14px; line-height: 1.4; }
+.screen-head { width: min(440px, 100%); display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.screen-head h2 { margin: 0; flex: 1; text-align: center; }
+.head-note { font-size: 13px; opacity: .75; min-width: 80px; text-align: right; }
+
+.chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip { display: inline-flex; align-items: center; gap: 6px; background: #333746; border-radius: 10px; padding: 8px 12px; font-size: 15px; }
+.chip .ic { font-size: 20px; }
+.chip small { opacity: .55; font-size: 12px; }
+
+/* ---------- Campaign map ---------- */
+.screen.top { overflow-x: hidden; }
+.map { position: relative; width: min(420px, 100%); margin-bottom: 30px; }
+.route { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.route path { fill: none; stroke-width: 6; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.route .todo { stroke: #3a3f50; stroke-dasharray: 2 12; }
+.route .done { stroke: #6d75e8; }
+.node {
+  position: absolute; transform: translate(-50%, -32px);
+  display: flex; flex-direction: column; align-items: center;
+  background: none; border: none; color: var(--text); cursor: pointer; padding: 0; width: 136px;
+}
+.node .disc {
+  position: relative; width: 64px; height: 64px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px; font-weight: 800; background: #3a3f50; border: 4px solid #4a5066;
+  box-shadow: 0 6px 0 #22252f; transition: transform .12s;
+}
+.node:hover .disc { transform: translateY(-2px); }
+.node .label { margin-top: 10px; display: flex; flex-direction: column; font-size: 14px; line-height: 1.25; text-shadow: 0 2px 4px #000; }
+.node .label small { opacity: .7; font-size: 12px; }
+.node.done .disc { background: #3d4270; border-color: #6d75e8; }
+.node.current .disc { background: #5b63d6; border-color: #c9ccff; animation: pulse 1.4s ease-in-out infinite; }
+.node.locked { cursor: default; }
+.node.locked .disc { opacity: .55; }
+.node.locked .label { opacity: .5; }
+.node.reward .disc { border-radius: 18px; }
+.node.reward.current .disc { background: linear-gradient(145deg, #ffd85a, #b8860b); border-color: #fff1b8; }
+.node.soon { cursor: default; }
+.node.soon .disc { opacity: .5; border-style: dashed; }
+.node.soon .label { opacity: .55; }
+.node .check { position: absolute; right: -6px; bottom: -4px; font-style: normal; font-size: 14px; background: #3fae5a; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; border: 2px solid var(--bg); }
+.node .lock { position: absolute; right: -8px; bottom: -6px; font-style: normal; font-size: 16px; }
+@keyframes pulse { 0%, 100% { box-shadow: 0 6px 0 #22252f, 0 0 0 0 rgba(143,150,255,.6); } 50% { box-shadow: 0 6px 0 #22252f, 0 0 0 12px rgba(143,150,255,0); } }
+
+/* ---------- Level briefing ---------- */
+.level { width: min(520px, 100%); }
+.level h2 { margin: 0 0 4px; }
+.level-meta { opacity: .75; }
+
+/* ---------- Deck ---------- */
+.deck { width: min(560px, 100%); }
+.deck h2 { margin-top: 0; }
+.deck-slots { display: flex; gap: 10px; margin: 12px 0; }
+.slot {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;
+  background: #333746; color: var(--text); border: 3px solid transparent; border-radius: 14px;
+  padding: 10px 6px 12px; font-size: 15px; cursor: pointer;
+}
+.slot .ic { font-size: 34px; }
+.slot .slot-no { font-size: 12px; opacity: .6; }
+.slot.active { border-color: var(--accent); background: #3d4270; }
+.deck-chars { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.char-card {
+  display: flex; gap: 12px; align-items: flex-start; text-align: left;
+  background: #2f3240; color: var(--text); border: 2px solid transparent; border-radius: 12px;
+  padding: 10px 12px; cursor: pointer; font-size: 15px;
+}
+.char-card:hover { background: #383c4d; }
+.char-card .ic { font-size: 28px; width: 34px; text-align: center; }
+.char-card .cc-body { display: flex; flex-direction: column; gap: 2px; }
+.char-card .cc-desc { font-size: 13px; opacity: .75; line-height: 1.35; }
+.char-card .tag { font-size: 11px; background: #5b63d6; border-radius: 6px; padding: 1px 6px; }
+.char-card.in-deck { border-color: #4a5090; }
+.char-card.locked { opacity: .5; cursor: default; }
+
+/* ---------- Settings ---------- */
+.settings { width: min(420px, 100%); }
+.settings h2 { margin-top: 0; }
+
+/* ---------- Game ---------- */
 .game-layout { display: flex; gap: 24px; align-items: flex-start; }
 .center { display: flex; flex-direction: column; align-items: center; gap: 10px; }
 
@@ -143,7 +230,8 @@ body {
 }
 .turn-indicator.blue { background: var(--blue); }
 .turn-indicator.red { background: var(--red); }
-.turn-indicator.thinking::after { content: " · думает…"; font-weight: normal; opacity: .85; }
+.turn-indicator.thinking::after { content: " · thinking…"; font-weight: normal; opacity: .85; }
+.series-bar { font-size: 13px; opacity: .75; min-height: 16px; text-align: center; }
 .hint-line { font-size: 14px; opacity: .8; min-height: 18px; text-align: center; }
 
 .board {
@@ -165,7 +253,7 @@ body {
   justify-content: center;
 }
 
-/* Карта */
+/* Card */
 .card {
   position: relative;
   width: 100%;
@@ -194,7 +282,7 @@ body {
 .card.not-mine { cursor: default; }
 .card.not-mine:hover { transform: none; }
 
-/* Подсмотренная карта (Scout) */
+/* Peeked card (Scout) */
 .card.peek { border-color: #d9dcff; }
 .card.peek .val { opacity: .9; font-size: 30px; }
 .card.peek.blue-peek .val { color: #9dbcff; }
@@ -202,7 +290,7 @@ body {
 .card.peek.gold-peek .val { color: #ffd85a; }
 .card.peek::before { content: "👁"; position: absolute; top: 2px; left: 4px; font-size: 13px; text-shadow: none; }
 
-/* Эффекты на карте */
+/* Card effects */
 .card .orig { position: absolute; bottom: 3px; right: 6px; font-size: 13px; text-decoration: line-through; opacity: .8; }
 .card.cursed .val { color: #e7c8ff; }
 .badge { position: absolute; font-size: 12px; line-height: 1; text-shadow: none; }
@@ -218,7 +306,7 @@ body {
 .card.shielded { box-shadow: 0 0 0 3px #5ad1ff inset; }
 .card.poisoned { box-shadow: 0 0 0 3px #6ee05c inset; }
 
-/* Мины, анимации-эффекты */
+/* Mines, effect animations */
 .mine { font-size: 28px; opacity: .85; border-radius: 50%; padding: 6px; line-height: 1; }
 .mine.blue { box-shadow: 0 0 0 3px var(--blue); }
 .mine.red { box-shadow: 0 0 0 3px var(--red); }
@@ -265,7 +353,7 @@ body {
 .log .entry.red { color: #ffa6a1; }
 .log .entry.sys { color: #c9c9c9; font-style: italic; }
 
-/* ---------- Сообщение о способности ---------- */
+/* ---------- Ability toast ---------- */
 .toast {
   position: fixed;
   top: 18px;
@@ -286,7 +374,7 @@ body {
 }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
 
-/* ---------- Окно подтверждения ---------- */
+/* ---------- Confirmation dialog ---------- */
 .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.55); align-items: center; justify-content: center; z-index: 10; padding: 20px; }
 .modal.open { display: flex; }
 .modal-box { text-align: center; min-width: 280px; }
@@ -294,11 +382,24 @@ body {
 .modal-buttons { display: flex; gap: 12px; }
 .modal-buttons .btn { flex: 1; }
 
-/* ---------- Победа ---------- */
+/* ---------- Victory ---------- */
 .victory { text-align: center; min-width: 380px; }
 .victory h2 { font-size: 42px; margin: 0 0 10px; }
 .victory h2.blue { color: #7fa8ff; }
 .victory h2.red { color: #ff8a84; }
+.victory h2.win { color: #8ee09a; }
+.victory h2.lose { color: #ff8a84; }
+.victory-kicker { font-size: 14px; opacity: .7; min-height: 18px; margin-bottom: 4px; }
+.series-result p { margin: 0 0 22px; line-height: 1.5; }
+.series-result small { opacity: .7; }
+.games { display: flex; flex-direction: column; gap: 6px; margin: -8px 0 16px; align-items: center; }
+.game-pill { font-size: 13px; padding: 4px 10px; border-radius: 8px; background: #333746; border-left: 4px solid; }
+.game-pill.win { border-color: #3fae5a; }
+.game-pill.lose { border-color: #e0413a; }
+.reward-ic { font-size: 64px; }
+#info-body h2 { margin: 6px 0 10px; }
+.reward-desc { font-size: 15px !important; opacity: .85; line-height: 1.4; }
+#info-body p { font-size: 16px; margin: 0 0 14px; }
 .final-scores { display: flex; justify-content: center; gap: 30px; font-size: 20px; margin: 20px 0 28px; }
 .fs.blue b { color: #7fa8ff; }
 .fs.red b { color: #ff8a84; }
@@ -339,4 +440,6 @@ body {
   .char-grid .opt { flex: 0 0 calc(33.3% - 6px); }
   .panel { padding: 22px 20px; }
   .victory { min-width: 0; }
+  .logo { font-size: 54px; margin-bottom: 30px; }
+  .slot .ic { font-size: 28px; }
 }

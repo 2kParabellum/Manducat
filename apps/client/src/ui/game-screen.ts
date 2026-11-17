@@ -1,5 +1,5 @@
-// Экран партии. Рисует только «вид игрока» из сессии и отправляет ходы в сессию.
-// Обновления от сессии проигрываются по очереди: сначала анимации хода, потом следующий ход.
+// Game screen. Draws only the player view from the session and submits actions to it.
+// Session updates are played one by one: first the move's animations, then the next move.
 import {
   BIT, CELLS, PLAYERS, abilityOf, abilityTargets, attackTargets, emptyCells, keyOf, moveTargets, scoutArea, scoutCorner, strength,
 } from '@manducat/core';
@@ -19,6 +19,7 @@ export interface GameOverInfo {
   titleClass: string;
   reason: string;
   view: PlayerView;
+  result: GameResult;
 }
 
 export class GameScreen {
@@ -58,23 +59,23 @@ export class GameScreen {
 
   get isOver(): boolean { return !!this.view?.result; }
 
-  // ---------- имена и права ----------
+  // ---------- names and permissions ----------
 
   private name(p: Player): string {
     const { mode, botSeat } = this.session.info;
-    if (mode === 'ai') return NAMES[p] + (p === botSeat ? ' (ИИ)' : ' (вы)');
+    if (mode === 'ai') return p === botSeat ? 'AI' : 'You';
     return NAMES[p];
   }
 
   private isLocal(p: Player): boolean { return this.session.info.localSeats.includes(p); }
 
-  /** Может ли человек на этом устройстве сейчас ходить. */
+  /** Whether the human on this device can act right now. */
   private canAct(): boolean {
     const v = this.view;
     return !!v && !v.result && !this.processing && this.queue.length === 0 && this.isLocal(v.turn);
   }
 
-  // ---------- очередь обновлений ----------
+  // ---------- update queue ----------
 
   private async pump(): Promise<void> {
     if (this.processing) return;
@@ -88,7 +89,11 @@ export class GameScreen {
     if (u.kind === 'start') {
       this.view = u.view;
       const ch = (p: Player) => CHARACTER_INFO[u.view.chars[p]].name;
-      this.addLog('sys', `Новая игра. ${NAMES.blue}: ${ch('blue')}, ${NAMES.red}: ${ch('red')}. Ходят ${this.name(u.view.turn)}.`);
+      const first = this.name(u.view.turn);
+      const intro = this.session.info.mode === 'ai'
+        ? PLAYERS.map(p => `${this.name(p) === 'You' ? 'You are' : 'AI is'} ${NAMES[p]} (${ch(p)})`).join(', ')
+        : `${NAMES.blue}: ${ch('blue')}, ${NAMES.red}: ${ch('red')}`;
+      this.addLog('sys', `New game. ${intro}. ${first} ${first === 'You' ? 'move' : 'moves'} first.`);
       this.render();
       return;
     }
@@ -98,7 +103,7 @@ export class GameScreen {
       return;
     }
 
-    // Ход соперника: сначала подсветить, чем он ходит
+    // Opponent's move: first highlight the piece being moved
     const a = u.action;
     if (a && !this.isLocal(u.actor) && (a.type === 'move' || a.type === 'attack' || a.type === 'place')) {
       this.selected = a.type === 'place' ? { type: 'hand' } : { type: 'cell', i: a.from };
@@ -133,7 +138,7 @@ export class GameScreen {
     }
   }
 
-  /** Сообщения и анимации события. Возвращает длительность анимации. */
+  /** Messages and animations for an event. Returns the animation duration. */
   private onEvent(e: GameEvent): number {
     const text = describeEvent(e, this.view!, p => this.name(p));
     if (text) {
@@ -166,11 +171,11 @@ export class GameScreen {
 
   private finish(r: GameResult, view: PlayerView): void {
     const { mode, botSeat } = this.session.info;
-    const title = mode === 'ai' ? (r.winner === botSeat ? 'ИИ победил' : 'Победа!') : `Победили ${NAMES[r.winner]}!`;
-    this.onGameOver({ title, titleClass: r.winner, reason: describeResult(r, view, p => this.name(p)), view });
+    const title = mode === 'ai' ? (r.winner === botSeat ? 'AI wins' : 'Victory!') : `${NAMES[r.winner]} wins!`;
+    this.onGameOver({ title, titleClass: r.winner, reason: describeResult(r, view, p => this.name(p)), view, result: r });
   }
 
-  // ---------- ввод ----------
+  // ---------- input ----------
 
   private submit(a: Action): void {
     this.selected = null;
@@ -225,7 +230,7 @@ export class GameScreen {
     if (!v || !this.canAct() || pl !== v.turn) return;
     if (!abilityOf(v.chars[pl]) || v.cooldown[pl] > 0) return;
     if (this.selected?.type === 'ability') { this.selected = null; return this.render(); }
-    if (abilityTargets(v, pl).length === 0) return showToast('Нет подходящих целей для способности');
+    if (abilityTargets(v, pl).length === 0) return showToast('No valid targets for the ability');
     this.selected = { type: 'ability' };
     this.hover = null;
     this.render();
@@ -244,10 +249,10 @@ export class GameScreen {
     if (!v || v.result) return;
     const { mode, localSeats } = this.session.info;
     const loser = mode === 'ai' ? localSeats[0] : v.turn;
-    askConfirm(mode === 'ai' ? 'Сдаться?' : `${NAMES[loser]} сдаются?`, () => this.session.resign(loser));
+    askConfirm(mode === 'ai' ? 'Surrender?' : `${NAMES[loser]} surrenders?`, () => this.session.resign(loser));
   }
 
-  // ---------- отрисовка ----------
+  // ---------- rendering ----------
 
   private buildBoard(): void {
     const boardEl = $('board');
@@ -295,7 +300,7 @@ export class GameScreen {
       el.classList.toggle('ability-target', abil.includes(i));
       el.classList.toggle('scout-area', scoutCells.includes(i));
 
-      // Содержимое клетки пересоздаётся, только если реально изменилось — иначе анимации повторялись бы
+      // Cell content is rebuilt only when it actually changed, otherwise animations would replay
       const peekCard = this.peek?.get(i)?.card;
       const fx = this.fx[i] ?? '';
       const van = this.vanishing?.i === i ? this.vanishing.card : null;
@@ -347,11 +352,11 @@ export class GameScreen {
 
     const ti = $('turn-indicator');
     ti.className = 'turn-indicator ' + p + (this.thinking ? ' thinking' : '');
-    ti.textContent = v.result ? 'Игра окончена' : `Ход: ${this.name(p)}`;
+    ti.textContent = v.result ? 'Game over' : this.session.info.mode === 'ai' ? (this.isLocal(p) ? 'Your turn' : 'AI\'s turn') : `${NAMES[p]} to move`;
 
     let hint = '';
-    if (sel?.type === 'ability') hint = (CHARACTER_INFO[v.chars[p]].hint ?? '') + ' · Esc — отмена';
-    else if (sel?.type === 'hand') hint = 'Выберите пустую клетку для M · Esc — отмена';
+    if (sel?.type === 'ability') hint = (CHARACTER_INFO[v.chars[p]].hint ?? '') + ' · Esc to cancel';
+    else if (sel?.type === 'hand') hint = 'Choose an empty cell for M · Esc to cancel';
     $('hint-line').textContent = hint;
 
     this.renderLog();
@@ -362,14 +367,14 @@ export class GameScreen {
     $(`score-${pl}`).textContent = String(v.scores[pl]);
     $(`panel-${pl}`).classList.toggle('active', pl === p && !v.result);
     const { mode, botSeat } = this.session.info;
-    $(`tag-${pl}`).textContent = mode === 'ai' ? (pl === botSeat ? 'ИИ' : 'Вы') : '';
+    $(`tag-${pl}`).textContent = mode === 'ai' ? (pl === botSeat ? 'AI' : 'You') : '';
     const ch = CHARACTER_INFO[v.chars[pl]];
     $(`char-${pl}`).textContent = `${ch.icon} ${ch.name}`;
 
     const handEl = $(`hand-${pl}`);
     handEl.innerHTML = '';
     if (v.hand[pl] === 0) {
-      handEl.innerHTML = '<span class="empty">пусто</span>';
+      handEl.innerHTML = '<span class="empty">empty</span>';
     } else {
       for (let k = 0; k < v.hand[pl]; k++) {
         const cEl = makeCardEl({ faceUp: true, owner: pl, value: 'M' }, v.rules.effectTurns);
@@ -388,12 +393,12 @@ export class GameScreen {
       const mine = pl === p && !v.result && this.isLocal(pl);
       btn.className = 'ability-btn' + (cd === 0 ? ' ready' : '') + (mine && sel?.type === 'ability' ? ' active' : '');
       btn.disabled = !mine || cd > 0 || this.processing || this.queue.length > 0;
-      btn.innerHTML = `${ch.icon} ${ch.verb}<small>${cd === 0 ? 'готово' : `через ${cd} ${plural(cd, 'ход', 'хода', 'ходов')}`}</small>`;
+      btn.innerHTML = `${ch.icon} ${ch.verb}<small>${cd === 0 ? 'ready' : `in ${plural(cd, 'turn')}`}</small>`;
     }
 
     const q = v.quiet[pl];
     const qEl = $(`quiet-${pl}`);
-    qEl.textContent = q > 0 ? `Тихие ходы: ${q}/${v.rules.quietLimit}` : '';
+    qEl.textContent = q > 0 ? `Quiet moves: ${q}/${v.rules.quietLimit}` : '';
     qEl.classList.toggle('warn', q >= v.rules.quietLimit - 5);
   }
 
@@ -414,7 +419,7 @@ export class GameScreen {
   }
 }
 
-// ---------- элементы карт ----------
+// ---------- card elements ----------
 
 function pieceSig(c: Piece): string {
   return c.owner + c.value + 'c' + (c.curse ?? 0) + 'p' + (c.poison ?? 0) + 's' + (c.shield ?? 0);

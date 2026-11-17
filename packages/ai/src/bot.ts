@@ -1,5 +1,5 @@
-// Бот: помнит, что видел, и выбирает ход по своему «виду игрока».
-// Один и тот же бот работает и в браузере, и (в будущем) на сервере.
+// Bot: remembers what it has seen and picks a move from its player view.
+// The same bot works in the browser and (in the future) on a server.
 import { listActions } from '@manducat/core';
 import type { Action, GameEvent, Player, PlayerView } from '@manducat/core';
 import { makeBelief, simApply } from './belief';
@@ -12,11 +12,11 @@ export type Difficulty = 'easy' | 'normal' | 'hard';
 interface DifficultyConfig {
   depth: number;
   noise: number;
-  /** Сколько лучших кандидатов досчитать на ход глубже (0 — не досчитывать). */
+  /** How many top candidates to search one ply deeper (0 — none). */
   deepen: number;
   beam: number;
   budgetMs: number;
-  /** Досчитывать, только когда закрытых карт не больше этого (в начале партии вариантов слишком много). */
+  /** Deepen only when at most this many cards are face down (too many variations early on). */
   maxHidden: number;
 }
 
@@ -29,9 +29,9 @@ export const DIFFICULTY: Readonly<Record<Difficulty, DifficultyConfig>> = {
 export interface Bot {
   readonly player: Player;
   readonly difficulty: Difficulty;
-  /** Сообщить боту новый вид и события, которые он видел. */
+  /** Tell the bot the new view and the events it saw. */
   observe(view: PlayerView, events: readonly GameEvent[]): void;
-  /** Выбрать ход (вызывать, когда ход бота). */
+  /** Choose an action (call when it is the bot's turn). */
   chooseAction(view: PlayerView): Action;
 }
 
@@ -69,7 +69,7 @@ function choose(
   const actions = listActions(s, me);
   if (actions.length === 1) return actions[0];
 
-  // Разведка не меняет позицию: её ценность = «пропуск хода» + ценность информации
+  // Scouting doesn't change the position: its value = "pass" + value of the information
   let passVal: number | null = null;
   let scored: Scored[] = actions.map(a => {
     if (a.type === 'ability' && a.kind === 'scout') {
@@ -80,7 +80,7 @@ function choose(
     return { a, v: actionValue(s, a, cfg.depth - 1, me, {}), bonus: 0 };
   });
 
-  // Сложный: лучшие кандидаты досчитываем на ход глубже, но не дольше бюджета времени
+  // Hard: search the best candidates one ply deeper, within the time budget
   if (cfg.deepen && s.hidden <= cfg.maxHidden) {
     scored.sort((x, y) => y.v - x.v);
     const top = scored.slice(0, cfg.deepen);
@@ -103,14 +103,14 @@ function choose(
     } finally {
       setDeadline(Infinity);
     }
-    if (done.length >= 2) scored = done;   // иначе остаёмся с обычным просчётом
+    if (done.length >= 2) scored = done;   // otherwise keep the regular search
   }
 
   for (const x of scored) {
     if (x.a.type === 'move' && Math.abs(x.v) < WIN_VALUE / 4) {
-      if (lastMove && x.a.from === lastMove.to && x.a.to === lastMove.from) x.v -= 0.5;   // не дёргать туда-обратно
-      x.v -= W.stall * view.quiet[me];                                                   // долго топчемся — пора действовать
-      x.v -= W.repeat * (k.positions.get(positionKey(simApply(s, x.a))) ?? 0);           // повтор позиции
+      if (lastMove && x.a.from === lastMove.to && x.a.to === lastMove.from) x.v -= 0.5;   // don't shuffle back and forth
+      x.v -= W.stall * view.quiet[me];                                                   // stalling for long — time to act
+      x.v -= W.repeat * (k.positions.get(positionKey(simApply(s, x.a))) ?? 0);           // position repetition
     }
     x.v += (random() - 0.5) * cfg.noise;
   }

@@ -1,20 +1,20 @@
-// Перебор вариантов: expectimax. Ход ИИ — максимум, ответ соперника — минимум,
-// открытие закрытой карты — среднее по всем возможным картам, шаг на возможную мину — с учётом риска.
+// Search: expectimax. The AI's move is a max node, the opponent's reply a min node,
+// flipping a face-down card averages over all possible cards, stepping onto a possible mine is weighted by risk.
 import { listActions, opponent, scoutArea } from '@manducat/core';
 import type { AbilityId, Action, Player } from '@manducat/core';
 import { simApply } from './belief';
 import type { SimState } from './belief';
 import { W, WIN_VALUE, evaluate } from './evaluate';
 
-/** Способности, которые имеют смысл в глубине перебора (разведка и мины — только на первом ходу). */
+/** Abilities that make sense deep in the search (scout and mines only at the root). */
 export const tacticalAbility = (kind: AbilityId): boolean => kind !== 'scout' && kind !== 'mine';
 
 export interface SearchOptions {
-  /** Сколько лучших ответов рассматривать в глубоких узлах (0 — все). */
+  /** How many best replies to consider at deep nodes (0 — all). */
   beam?: number;
 }
 
-/** Жёсткий лимит времени: при превышении перебор прерывается исключением ABORT. */
+/** Hard time limit: when exceeded, the search is aborted by throwing ABORT. */
 export const ABORT = Symbol('abort');
 let deadline = Infinity;
 let nodes = 0;
@@ -26,7 +26,7 @@ export function search(s: SimState, depth: number, me: Player, opts: SearchOptio
   if (depth === 0) return evaluate(s, me);
 
   const actions = listActions(s, s.turn, tacticalAbility);
-  if (actions.length === 0) return s.turn === me ? -WIN_VALUE : WIN_VALUE;   // нет ходов = поражение
+  if (actions.length === 0) return s.turn === me ? -WIN_VALUE : WIN_VALUE;   // no moves = loss
   const maximize = s.turn === me;
 
   let list = actions;
@@ -71,7 +71,7 @@ export function actionValue(s: SimState, a: Action, depth: number, me: Player, o
   return search(simApply(s, a), depth, me, opts);
 }
 
-/** Ценность разведки: сколько неизвестного в области 2×2. */
+/** Scout value: how much is unknown in the 2×2 area. */
 export function scoutInfo(s: SimState, i: number): number {
   let v = 0;
   for (const j of scoutArea(i)) {

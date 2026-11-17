@@ -18,14 +18,14 @@ function game(cells: Record<number, Cell>, extra: Partial<GameCore> = {}): GameC
   };
 }
 
-/** Фигуры 0 (синие) и 35 (красные) ходят туда-обратно — «тихие» ходы. */
+/** Pieces 0 (blue) and 35 (red) shuffle back and forth — quiet moves. */
 function shuffleMove(g: GameCore): Action {
   if (g.turn === 'blue') return g.board[0] ? { type: 'move', from: 0, to: 1 } : { type: 'move', from: 1, to: 0 };
   return g.board[35] ? { type: 'move', from: 35, to: 34 } : { type: 'move', from: 34, to: 35 };
 }
 
-describe('щит', () => {
-  it('отражает атаку: атакующий на месте, цель жива, щит снят', () => {
+describe('shield', () => {
+  it('reflects an attack: attacker stays, target survives, shield is gone', () => {
     const g = game({ 0: P('blue', '8'), 2: P('red', '5', { shield: 3 }) });
     applyRaw(g, { type: 'attack', from: 0, to: 2 });
     expect((g.board[0] as Piece).value).toBe('8');
@@ -33,7 +33,7 @@ describe('щит', () => {
     expect(g.scores.blue).toBe(0);
   });
 
-  it('действует 5 ходов соперника', () => {
+  it('lasts 5 opponent turns', () => {
     const g = game({ 0: P('blue', '1'), 35: P('red', '1') }, { chars: { blue: 'defender', red: 'jack' } });
     applyRaw(g, { type: 'ability', kind: 'shield', i: 0 });
     const left: number[] = [];
@@ -46,8 +46,8 @@ describe('щит', () => {
   });
 });
 
-describe('яд', () => {
-  it('съевший погибает, даже под щитом; очки обоим', () => {
+describe('poison', () => {
+  it('the eater dies even under a shield; both sides score', () => {
     const g = game({ 0: P('blue', '8', { shield: 4 }), 2: P('red', '5', { poison: 3 }) });
     applyRaw(g, { type: 'attack', from: 0, to: 2 });
     expect(g.board[0]).toBeNull();
@@ -56,36 +56,36 @@ describe('яд', () => {
   });
 });
 
-describe('порча', () => {
-  it('снижает силу и очки', () => {
+describe('curse', () => {
+  it('reduces strength and points', () => {
     const c8 = P('red', '8', { curse: 1 });
     expect(strength(c8)).toBe(7);
     expect(piecePoints(c8, DEFAULT_RULES)).toBe(7);
   });
 
-  it('настоящая 1 бьёт проклятую 8, проклятая 2 восьмёрку — нет', () => {
+  it('a real 1 beats a cursed 8, a cursed 2 does not beat an 8', () => {
     expect(canBeat(P('blue', '1'), P('red', '8', { curse: 1 }))).toBe(true);
     expect(canBeat(P('blue', '2', { curse: 1 }), P('red', '8'))).toBe(false);
   });
 
-  it('равные с порчей: 5 бьёт проклятую 5, наоборот нет', () => {
+  it('equal values with a curse: 5 beats a cursed 5, not vice versa', () => {
     expect(canBeat(P('blue', '5'), P('red', '5', { curse: 1 }))).toBe(true);
     expect(canBeat(P('red', '5', { curse: 1 }), P('blue', '5'))).toBe(false);
   });
 
-  it('складывается: за 8 с двумя порчами дают 6 очков', () => {
+  it('stacks: an 8 with two curses is worth 6 points', () => {
     const g = game({ 0: P('blue', '8'), 2: P('red', '8', { curse: 2 }) });
     applyRaw(g, { type: 'attack', from: 0, to: 2 });
     expect(g.scores.blue).toBe(6);
   });
 
-  it('снимается, когда проклятая карта кого-то съела', () => {
+  it('is lifted when the cursed card captures', () => {
     const g = game({ 0: P('blue', '5', { curse: 2 }), 2: P('red', '2') });
     applyRaw(g, { type: 'attack', from: 0, to: 2 });
     expect(g.board[2]).toMatchObject({ value: '5', curse: 0 });
   });
 
-  it('нельзя на силу 1 и на M', () => {
+  it('cannot target strength 1 or M', () => {
     const g = game(
       { 0: P('blue', '3'), 1: P('red', '2', { curse: 1 }), 2: P('red', '1'), 3: P('red', 'M'), 4: P('red', '8') },
       { chars: { blue: 'witch', red: 'jack' } },
@@ -96,8 +96,8 @@ describe('порча', () => {
   });
 });
 
-describe('мины', () => {
-  it('чужая фигура погибает, минёр получает очки, мина исчезает', () => {
+describe('mines', () => {
+  it('an enemy piece dies, the miner scores, the mine is gone', () => {
     const g = game({ 0: P('red', '5') }, { turn: 'red' });
     g.mines[1] = BIT.blue;
     applyRaw(g, { type: 'move', from: 0, to: 1 });
@@ -106,7 +106,7 @@ describe('мины', () => {
     expect(g.mines[1]).toBe(0);
   });
 
-  it('своя фигура тоже подрывается, щит не спасает, очков нет', () => {
+  it('own piece blows up too, shield does not help, no points', () => {
     const g = game({ 0: P('blue', '5', { shield: 5 }) });
     g.mines[1] = BIT.blue;
     applyRaw(g, { type: 'move', from: 0, to: 1 });
@@ -114,7 +114,7 @@ describe('мины', () => {
     expect(g.scores).toEqual({ blue: 0, red: 0 });
   });
 
-  it('выложенная M подрывается', () => {
+  it('a placed M blows up', () => {
     const g = game({}, { hand: { blue: 1, red: 0 } });
     g.mines[7] = BIT.red;
     applyRaw(g, { type: 'place', i: 7 });
@@ -122,7 +122,7 @@ describe('мины', () => {
     expect(g.hand.blue).toBe(0);
   });
 
-  it('атака по прямой пролетает над минами', () => {
+  it('a line attack passes over mines', () => {
     const g = game({ 0: P('blue', '8'), 3: P('red', '2') });
     g.mines[1] = BIT.red;
     g.mines[2] = BIT.red;
@@ -132,10 +132,10 @@ describe('мины', () => {
   });
 });
 
-describe('способности', () => {
-  it('перезарядка: снова доступна на 16-м своём ходу', () => {
+describe('abilities', () => {
+  it('cooldown: available again on the 16th own turn', () => {
     const g = game({ 0: P('blue', '1'), 35: P('red', '1') }, { chars: { blue: 'defender', red: 'jack' } });
-    applyRaw(g, { type: 'ability', kind: 'shield', i: 0 });   // ход 1
+    applyRaw(g, { type: 'ability', kind: 'shield', i: 0 });   // turn 1
     let readyTurn: number | null = null;
     for (let t = 2; t <= 20 && readyTurn === null; t++) {
       applyRaw(g, shuffleMove(g));
@@ -146,22 +146,22 @@ describe('способности', () => {
   });
 });
 
-describe('правило 20 тихих ходов', () => {
-  it('при равенстве очков проигрывает сделавший 20-й ход', () => {
+describe('20 quiet moves rule', () => {
+  it('on a tie the player who made the 20th move loses', () => {
     const g = game({ 0: P('blue', '1'), 35: P('red', '1') });
     let n = 0;
     while (!g.result && n < 100) { applyRaw(g, shuffleMove(g)); n++; }
-    expect(n).toBe(39);   // 20-й ход синих
+    expect(n).toBe(39);   // blue's 20th move
     expect(g.result).toEqual({ winner: 'red', reason: 'quiet', mover: 'blue' });
   });
 
-  it('у кого больше очков — тот и победил', () => {
+  it('more points wins', () => {
     const g = game({ 0: P('blue', '1'), 35: P('red', '1') }, { scores: { blue: 5, red: 0 } });
     while (!g.result) applyRaw(g, shuffleMove(g));
     expect(g.result!.winner).toBe('blue');
   });
 
-  it('открытие сбрасывает счётчик у обоих', () => {
+  it('a flip resets both counters', () => {
     const g = game({ 0: P('blue', '1'), 35: P('red', '1'), 20: { faceUp: false, owner: 'red', value: '3' } },
       { quiet: { blue: 19, red: 19 } });
     applyRaw(g, { type: 'flip', i: 20 });

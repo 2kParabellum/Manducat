@@ -1,25 +1,26 @@
 # Manducat
 
-Пошаговая карточная игра на поле 6×6 для двух игроков: открытия, взятия «как ладья», персонажи со способностями. Режимы — против ИИ (3 уровня) и вдвоём за одним экраном.
+A turn-based card game for two on a 6×6 board: flips, rook-like captures, characters with abilities.
+Modes: campaign, quick game vs AI (single game, Bo3, Bo5; 3 difficulty levels) and hot-seat (debug mode, everything is visible).
 
-## Запуск
+## Running
 
 ```
 npm install
 npm run dev       # http://localhost:5173
 ```
 
-Сборка: `npm run build` → `apps/client/dist` (статические файлы для веб-сервера). `npm run build:single` → `apps/client/dist-single/index.html` — всё в одном файле.
+Build: `npm run build` → `apps/client/dist` (static files for a web server). `npm run build:single` → `apps/client/dist-single/index.html`, everything in one file.
 
 ## GitHub Pages
 
-Игра публикуется из корня ветки `main`: `index.html` в корне — готовая сборка в один файл.
-После изменений в коде пересобрать её: `npm run pages` — и закоммитить `index.html`.
+The game is published from the root of the `main` branch: the root `index.html` is a single-file build.
+After code changes rebuild it with `npm run pages` and commit `index.html`.
 
-## Разработка
+## Development
 
-- `npm test` — тесты правил, вида игрока и ботов
-- `npm run typecheck` — проверка типов
-- `npm run sim -- --games 20 --a normal:miner --b normal:jack` — турнир ботов для балансировки
+- `npm test` — tests for rules, player views, series and bots
+- `npm run typecheck` — type checking
+- `npm run sim -- --games 20 --a normal:miner --b normal:jack` — bot tournament for balancing
 
-Устройство проекта и планы — в [ARCHITECTURE.md](ARCHITECTURE.md).
+Project structure and plans: [ARCHITECTURE.md](ARCHITECTURE.md).

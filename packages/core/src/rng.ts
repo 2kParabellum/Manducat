@@ -1,5 +1,5 @@
-// Детерминированный генератор случайных чисел: одна и та же «семя» → одна и та же раскладка.
-// Нужно для повторов партий, отладки, фиксированных уровней кампании и сервера.
+// Deterministic random number generator: the same seed → the same layout.
+// Needed for replays, debugging, fixed campaign levels and the server.
 
 export type Rng = () => number;
 
