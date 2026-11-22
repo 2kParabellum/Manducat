@@ -17,8 +17,8 @@ packages/
     board.ts         6×6 board geometry
     pieces.ts        strength, points, "who beats whom"
     abilities.ts     characters and abilities (registry)
-    rules.ts         legal actions, action validation
-    engine.ts        game creation, applying actions, game end
+    rules.ts         legal actions, action validation, Rule of Three Repeats ban
+    engine.ts        game creation, applying actions, final countdown, game end
     view.ts          player view and event filtering
     series.ts        decks and best-of-N series
     rules-config.ts  default rule numbers (39 points, cooldown 15, etc.)

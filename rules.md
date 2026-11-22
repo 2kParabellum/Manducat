@@ -39,9 +39,15 @@ On your turn you do exactly one action:
 ## Winning
 
 - **Score**: the first player to reach **39 points** wins. If both reach it on the same turn, the higher score wins; on a tie the player who made the move wins.
-- **Quiet moves**: a move without a flip or a capture (an explosion on a mine also counts as "loud") is quiet. Any loud move resets both players' counters. When a player makes their **20th quiet move in a row**, the game ends: more points wins; on a tie the player who made that 20th move **loses**.
+- **Quiet moves and the final countdown**: a move without a flip or a capture (an explosion on a mine also counts as "loud") is quiet. Any loud move resets both players' quiet counters. When a player makes their **15th quiet move in a row**, a warning appears and the **final countdown** starts: each player makes **10 more moves** (the opponent moves first, so the player who triggered it moves last). Flips and captures do **not** stop the countdown. When it ends, more points wins; on a tie the player who made the last move (the one who triggered the countdown) **loses**. Reaching 39 points during the countdown still wins immediately.
 - **No moves**: a player who has no legal action on their turn loses.
 - **Surrender**: a player may resign at any time.
+
+## Rule of Three Repeats
+
+- If a player's last 6 own actions are **A, B, A, B, A, B** (only moves and attacks count; flips, placing M and abilities break the pattern), action **A is banned** on their next turn.
+- The banned target cell is shown in red; trying it shows a warning.
+- The ban is lifted if it is the player's only legal action.
 
 ## Characters and abilities
 

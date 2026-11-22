@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  BIT, DEFAULT_RULES, abilityTargets, applyRaw, canBeat, listActions, piecePoints, strength,
+  BIT, DEFAULT_RULES, abilityTargets, applyRaw, bannedAction, canBeat, listActions, piecePoints, repeatBanKey,
+  strength,
 } from '../src';
 import type { Action, Cell, GameCore, Piece, Player } from '../src';
 
@@ -146,12 +147,16 @@ describe('abilities', () => {
   });
 });
 
-describe('20 quiet moves rule', () => {
-  it('on a tie the player who made the 20th move loses', () => {
+describe('quiet moves and the final countdown', () => {
+  it('15 quiet moves start a countdown of 10 moves each; on a tie the last mover loses', () => {
     const g = game({ 0: P('blue', '1'), 35: P('red', '1') });
-    let n = 0;
-    while (!g.result && n < 100) { applyRaw(g, shuffleMove(g)); n++; }
-    expect(n).toBe(39);   // blue's 20th move
+    let n = 0, started = -1;
+    while (!g.result && n < 100) {
+      const ev = applyRaw(g, shuffleMove(g)); n++;
+      if (ev.some(e => e.t === 'countdown')) started = n;
+    }
+    expect(started).toBe(29);  // blue's 15th quiet move
+    expect(n).toBe(49);        // blue's 10th move of the countdown
     expect(g.result).toEqual({ winner: 'red', reason: 'quiet', mover: 'blue' });
   });
 
@@ -161,11 +166,79 @@ describe('20 quiet moves rule', () => {
     expect(g.result!.winner).toBe('blue');
   });
 
-  it('a flip resets both counters', () => {
+  it('a flip resets the quiet counters', () => {
     const g = game({ 0: P('blue', '1'), 35: P('red', '1'), 20: { faceUp: false, owner: 'red', value: '3' } },
-      { quiet: { blue: 19, red: 19 } });
+      { quiet: { blue: 14, red: 14 } });
     applyRaw(g, { type: 'flip', i: 20 });
     expect(g.result).toBeNull();
+    expect(g.countdown).toBe(0);
     expect(g.quiet).toEqual({ blue: 0, red: 0 });
+  });
+
+  it('flips and captures do not stop a running countdown', () => {
+    const g = game({ 0: P('blue', '8'), 2: P('red', '2'), 20: { faceUp: false, owner: 'red', value: '3' } },
+      { countdown: 3 });
+    applyRaw(g, { type: 'attack', from: 0, to: 2 });
+    expect(g.countdown).toBe(2);
+    applyRaw(g, { type: 'flip', i: 20 });
+    expect(g.countdown).toBe(1);
+    applyRaw(g, { type: 'move', from: 2, to: 3 });
+    expect(g.result).toEqual({ winner: 'blue', reason: 'quiet', mover: 'blue' });
+  });
+
+  it('reaching 39 points still wins immediately during the countdown', () => {
+    const g = game({ 0: P('blue', '8'), 2: P('red', '8') }, { countdown: 5, scores: { blue: 35, red: 0 } });
+    applyRaw(g, { type: 'attack', from: 0, to: 2 });
+    expect(g.result).toEqual({ winner: 'blue', reason: 'score' });
+  });
+});
+
+describe('Rule of Three Repeats', () => {
+  const A: Action = { type: 'move', from: 0, to: 1 };
+  const B: Action = { type: 'move', from: 1, to: 0 };
+
+  function repeated(): GameCore {
+    const g = game({ 0: P('blue', '1'), 35: P('red', '1') });
+    for (let k = 0; k < 3; k++) {
+      applyRaw(g, A); applyRaw(g, shuffleMove(g));
+      applyRaw(g, B); applyRaw(g, shuffleMove(g));
+    }
+    return g;
+  }
+
+  it('A, B, A, B, A, B bans A on the next turn', () => {
+    const g = repeated();
+    expect(repeatBanKey(g, 'blue')).toBe('move:0-1');
+    expect(bannedAction(g, 'blue')).toEqual(A);
+    const acts = listActions(g, 'blue');
+    expect(acts).not.toContainEqual(A);
+    expect(acts).toContainEqual({ type: 'move', from: 0, to: 6 });
+  });
+
+  it('the ban is lifted after a different action', () => {
+    const g = repeated();
+    applyRaw(g, { type: 'move', from: 0, to: 6 });
+    applyRaw(g, shuffleMove(g));
+    expect(repeatBanKey(g, 'blue')).toBeNull();
+  });
+
+  it('only five repeats are not enough', () => {
+    const g = game({ 0: P('blue', '1') });
+    g.recent = { blue: ['move:1-0', 'move:0-1', 'move:1-0', 'move:0-1', 'move:1-0'], red: [] };
+    expect(repeatBanKey(g, 'blue')).toBeNull();
+  });
+
+  it('flips, place and abilities never count', () => {
+    const g = game({ 0: P('blue', '1') });
+    g.recent = { blue: ['-', 'move:1-0', '-', 'move:1-0', '-', 'move:1-0'], red: [] };
+    expect(repeatBanKey(g, 'blue')).toBeNull();
+  });
+
+  it('the ban is lifted if it is the only legal action', () => {
+    // Blue's only piece is boxed in: 0 → 1 is its single possible action
+    const g = game({ 0: P('blue', '2'), 6: P('red', '8'), 2: P('red', '8'), 7: P('red', '8') });
+    g.recent = { blue: ['move:0-1', 'move:1-0', 'move:0-1', 'move:1-0', 'move:0-1', 'move:1-0'], red: [] };
+    expect(listActions(g, 'blue')).toEqual([A]);
+    expect(bannedAction(g, 'blue')).toBeNull();
   });
 });
