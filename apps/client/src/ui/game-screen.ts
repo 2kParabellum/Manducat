@@ -9,6 +9,8 @@ import { CHARACTER_INFO } from '../content/characters';
 import { NAMES, describeEvent, describeResult, plural } from '../content/describe';
 import type { GameSession, SessionUpdate } from '../session/types';
 import { $, askConfirm, showToast, sleep } from './dom';
+import { sameAction } from './guide';
+import type { Coach, Guide } from './guide';
 
 type Selection = { type: 'cell'; i: number } | { type: 'hand' } | { type: 'ability' };
 
@@ -42,8 +44,16 @@ export class GameScreen {
   private readonly unsubscribe: () => void;
   private readonly onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') this.cancelSelection(); };
 
-  constructor(private readonly session: GameSession, private readonly onGameOver: (info: GameOverInfo) => void) {
+  constructor(
+    private readonly session: GameSession,
+    private readonly onGameOver: (info: GameOverInfo) => void,
+    private readonly guide?: Guide,
+  ) {
     this.buildBoard();
+    $('coach-btn').onclick = () => {
+      this.guide?.press();
+      this.render();
+    };
     for (const pl of PLAYERS) $(`ability-${pl}`).onclick = () => this.onAbilityClick(pl);
     $('btn-surrender').onclick = () => this.onSurrender();
     document.addEventListener('keydown', this.onKey);
@@ -71,10 +81,34 @@ export class GameScreen {
 
   private isLocal(p: Player): boolean { return this.session.info.localSeats.includes(p); }
 
-  /** Whether the human on this device can act right now. */
-  private canAct(): boolean {
+  /** Whether it is the local human's turn and nothing is being animated. */
+  private inputReady(): boolean {
     const v = this.view;
     return !!v && !v.result && !this.processing && this.queue.length === 0 && this.isLocal(v.turn);
+  }
+
+  /** Whether the human on this device can act right now (the coach may be waiting for its button). */
+  private canAct(): boolean {
+    return this.inputReady() && !this.coach()?.button;
+  }
+
+  // ---------- guide (tutorial) ----------
+
+  private coach(): Coach | null {
+    return this.guide && this.view ? this.guide.coach(this.view, this.inputReady()) : null;
+  }
+
+  /** The only action the guide allows now, if any. */
+  private expected(): Action | undefined {
+    return this.coach()?.expect;
+  }
+
+  /** Shakes the coach message: the player tried something other than what it asks. */
+  private nudge(): void {
+    const el = $('coach');
+    el.classList.remove('nudge');
+    void el.offsetWidth;   // restart the animation
+    el.classList.add('nudge');
   }
 
   // ---------- update queue ----------
@@ -180,6 +214,8 @@ export class GameScreen {
   // ---------- input ----------
 
   private submit(a: Action): void {
+    const exp = this.expected();
+    if (exp && !sameAction(a, exp)) return this.nudge();
     this.selected = null;
     this.hover = null;
     if (!this.session.submit(a)) this.render();
@@ -215,6 +251,8 @@ export class GameScreen {
     }
     if (card === null) { this.selected = null; return this.render(); }
     if (!card.faceUp) return this.submit({ type: 'flip', i });
+    const exp = this.expected();
+    if (exp && card.owner === p && !((exp.type === 'move' || exp.type === 'attack') && exp.from === i)) return this.nudge();
     this.selected = card.owner === p ? { type: 'cell', i } : null;
     this.render();
   }
@@ -228,6 +266,8 @@ export class GameScreen {
 
   private onHandClick(pl: Player): void {
     if (!this.canAct() || pl !== this.view!.turn || this.view!.hand[pl] === 0) return;
+    const exp = this.expected();
+    if (exp && exp.type !== 'place') return this.nudge();
     this.selected = this.selected?.type === 'hand' ? null : { type: 'hand' };
     this.render();
   }
@@ -306,6 +346,21 @@ export class GameScreen {
       else abil = abilityTargets(v, p);
     }
 
+    // Guide: only the expected action is offered and highlighted
+    const coach = this.coach();
+    const exp = coach?.expect;
+    let guideCells: number[] = [];
+    if (exp) {
+      const ok = (a: Action) => sameAction(a, exp);
+      if (sel?.type === 'cell') {
+        moves = moves.filter(to => ok({ type: 'move', from: sel.i, to }));
+        attacks = attacks.filter(to => ok({ type: 'attack', from: sel.i, to }));
+      }
+      places = places.filter(i => ok({ type: 'place', i }));
+      guideCells = guideTargets(exp, sel);
+    }
+    $('board').classList.toggle('guided', !!exp || !!coach?.button);
+
     v.board.forEach((card, i) => {
       const el = this.cellEls[i];
       el.classList.toggle('last-move', this.lastMove.includes(i));
@@ -314,6 +369,7 @@ export class GameScreen {
       el.classList.toggle('banned-target', banned === i);
       el.classList.toggle('ability-target', abil.includes(i));
       el.classList.toggle('scout-area', scoutCells.includes(i));
+      el.classList.toggle('guide', guideCells.includes(i));
 
       // Cell content is rebuilt only when it actually changed, otherwise animations would replay
       const peekCard = this.peek?.get(i)?.card;
@@ -363,7 +419,9 @@ export class GameScreen {
       }
     });
 
-    for (const pl of PLAYERS) this.renderPanel(pl, v, sel);
+    const guideHand = exp?.type === 'place' && sel?.type !== 'hand';
+    for (const pl of PLAYERS) this.renderPanel(pl, v, sel, guideHand && pl === p);
+    this.renderCoach(coach);
 
     const ti = $('turn-indicator');
     ti.className = 'turn-indicator ' + p + (this.thinking ? ' thinking' : '');
@@ -378,7 +436,22 @@ export class GameScreen {
     this.renderLog();
   }
 
-  private renderPanel(pl: Player, v: PlayerView, sel: Selection | null): void {
+  private renderCoach(c: Coach | null): void {
+    const el = $('coach');
+    el.classList.toggle('hidden', !c);
+    $('btn-surrender').classList.toggle('hidden', !!c?.scripted);
+    if (!c) return;
+    el.classList.toggle('dim', !!c.dim);
+    $('coach-progress').textContent = c.progress ?? '';
+    $('coach-title').textContent = c.title;
+    const text = $('coach-text');
+    if (text.innerHTML !== c.text) text.innerHTML = c.text;
+    const btn = $('coach-btn');
+    btn.textContent = c.button ?? '';
+    btn.classList.toggle('hidden', !c.button);
+  }
+
+  private renderPanel(pl: Player, v: PlayerView, sel: Selection | null, guideHand: boolean): void {
     const p = v.turn;
     $(`score-${pl}`).textContent = String(v.scores[pl]);
     $(`panel-${pl}`).classList.toggle('active', pl === p && !v.result);
@@ -396,6 +469,7 @@ export class GameScreen {
         const cEl = makeCardEl({ faceUp: true, owner: pl, value: 'M' }, v.rules.effectTurns);
         if (!(pl === p && this.isLocal(pl))) cEl.classList.add('not-mine');
         if (pl === p && sel?.type === 'hand') cEl.classList.add('selected');
+        if (guideHand) cEl.classList.add('guide');
         cEl.addEventListener('click', () => this.onHandClick(pl));
         handEl.appendChild(cEl);
       }
@@ -439,6 +513,17 @@ export class GameScreen {
       logEl.appendChild(d);
     }
     logEl.scrollTop = logEl.scrollHeight;
+  }
+}
+
+/** Cells to highlight for the expected action: the piece to pick first, then its target. */
+function guideTargets(a: Action, sel: Selection | null): number[] {
+  switch (a.type) {
+    case 'flip': return [a.i];
+    case 'move':
+    case 'attack': return [sel?.type === 'cell' && sel.i === a.from ? a.to : a.from];
+    case 'place': return sel?.type === 'hand' ? [a.i] : [];
+    case 'ability': return [a.i];
   }
 }
 

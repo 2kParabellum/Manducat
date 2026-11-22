@@ -31,10 +31,12 @@ packages/
     arena.ts         bot vs bot matches
 apps/
   client/    web client (Vite)
-    src/session/     sessions: types.ts (interface), local.ts (AI and hot-seat)
+    src/session/     sessions: types.ts (interface), local.ts (AI and hot-seat, fixed layouts, scripted bot moves)
     src/flow/        match.ts: one game or a series, a session + game screen per game
-    src/ui/          screens: game, setup, campaign map, deck, dialogs
-    src/content/     texts and data: characters, event messages, campaign levels
+                     tutorial.ts: the tutorial script → a Scenario (layout, bot script, guide)
+    src/ui/          screens: game, setup, campaign map, deck, dialogs; guide.ts: the coach interface
+    src/content/     texts and data: characters, event messages, campaign levels, the tutorial script
+  client/test/       tests for client content (the tutorial script is legal and complete)
     src/meta/        settings and the player profile (unlocked characters, deck, campaign progress)
 tools/
   sim.ts            bot tournament for balancing
@@ -79,6 +81,15 @@ Dependencies go strictly one way: `client → ai → core`, `client → core`. T
 ## Decks and series
 
 A deck is 3 characters in a fixed order; Jack may appear several times, others at most once. Game 1 of a series is played with slot #1. After each game the winner keeps their character and the loser moves on to the next slot. Bo3 needs 2 wins, Bo5 needs 3; a deck of 3 is enough for both, because a side that lost 3 games has lost even a Bo5. This logic is in `core/series.ts`, so a server will be able to use the same code.
+
+## Tutorial
+
+The first campaign node. A Jack vs Jack game against the Easy AI on a fixed layout (`client/src/content/tutorial.ts`). The first 7 player actions are scripted (flip → gold → move → capture → find M → place M → capture an 8 with M), and so are the AI's answers in between; after that the game is played out freely. Any finished game (won, lost or surrendered after the script) completes the tutorial and opens Level 1.
+
+How it is wired:
+- `Scenario` (`flow/match.ts`) = fixed `layout` + `botScript` + a `Guide` factory. `Match` passes the layout and bot script to `LocalSession` (the bot's k-th turn plays `botScript[k]` if legal, then it thinks on its own) and the guide to `GameScreen`.
+- `Guide` (`ui/guide.ts`) returns a `Coach` for the current view: the message above the board, an optional blocking button, and the only `expect`ed action. `GameScreen` highlights the expected piece/target, dims the rest of the board, rejects other actions with a shake of the message and hides Surrender while the game is scripted. The step is derived from `view.moveNumber`, so the guide keeps no game state of its own.
+- The same mechanism can drive future scripted levels or puzzle challenges.
 
 ## Campaign
 

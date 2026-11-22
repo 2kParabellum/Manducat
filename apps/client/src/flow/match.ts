@@ -1,12 +1,20 @@
 // A match: one game or a best-of-N series against the AI (or hot-seat).
 // Creates a LocalSession + GameScreen per game and keeps the series score.
 import { createSeries, opponent, recordGame, seriesChars, seriesWinner } from '@manducat/core';
-import type { CharacterId, Player, SeriesState, Side } from '@manducat/core';
+import type { Action, CardIdentity, CharacterId, Player, SeriesState, Side } from '@manducat/core';
 import type { Difficulty } from '@manducat/ai';
 import { LocalSession } from '../session/local';
 import { GameScreen } from '../ui/game-screen';
 import type { GameOverInfo } from '../ui/game-screen';
+import type { Guide } from '../ui/guide';
 import { $, showScreen } from '../ui/dom';
+
+/** A scripted game (the tutorial): fixed layout, the bot's first moves and a coach. Single games only. */
+export interface Scenario {
+  layout: ReadonlyArray<CardIdentity | null>;
+  botScript: readonly Action[];
+  guide(): Guide;
+}
 
 export interface MatchConfig {
   mode: 'ai' | 'hotseat';
@@ -18,6 +26,7 @@ export interface MatchConfig {
   color: Player | 'random';
   /** Caption above the board, e.g. "Level 7 · The Gauntlet". */
   title: string;
+  scenario?: Scenario;
 }
 
 export interface GameEnd {
@@ -30,6 +39,9 @@ export interface GameEnd {
   /** Game number that just ended (1-based). */
   gameNo: number;
 }
+
+/** The bot moves a bit slower in scripted games, so the player can follow. */
+const SCENARIO_BOT_DELAY_MS = 700;
 
 export class Match {
   readonly series: SeriesState;
@@ -57,11 +69,15 @@ export class Match {
     const chars = seriesChars(this.series);
     this.colorA = cfg.color === 'random' ? (Math.random() < 0.5 ? 'blue' : 'red') : cfg.color;
     const byColor = { [this.colorA]: chars.a, [opponent(this.colorA)]: chars.b } as Record<Player, CharacterId>;
+    const sc = cfg.scenario;
     this.session = cfg.mode === 'ai'
-      ? new LocalSession({ mode: 'ai', chars: byColor, humanColor: this.colorA, difficulty: cfg.difficulty })
-      : new LocalSession({ mode: 'hotseat', chars: byColor });
+      ? new LocalSession({
+        mode: 'ai', chars: byColor, humanColor: this.colorA, difficulty: cfg.difficulty,
+        layout: sc?.layout, botScript: sc?.botScript, botDelayMs: sc ? SCENARIO_BOT_DELAY_MS : undefined,
+      })
+      : new LocalSession({ mode: 'hotseat', chars: byColor, layout: sc?.layout });
     const gameNo = this.series.games.length + 1;
-    this.screen = new GameScreen(this.session, info => this.finish(info, gameNo));
+    this.screen = new GameScreen(this.session, info => this.finish(info, gameNo), sc?.guide());
     $('series-bar').textContent = this.caption(gameNo);
     showScreen('game');
     this.session.start();

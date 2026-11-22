@@ -3,10 +3,11 @@ import { CHARACTER_IDS, seriesChars, shuffle } from '@manducat/core';
 import type { CharacterId } from '@manducat/core';
 import './styles.css';
 import { charLabel } from './content/characters';
-import { CAMPAIGN, DIFFICULTY_NAME } from './content/campaign';
+import { CAMPAIGN, DIFFICULTY_NAME, TUTORIAL_ID } from './content/campaign';
 import type { LevelNode } from './content/campaign';
 import { Match } from './flow/match';
 import type { GameEnd, MatchConfig } from './flow/match';
+import { tutorialScenario } from './flow/tutorial';
 import { loadProfile, resetCampaign, saveProfile, unlockAll } from './meta/profile';
 import { loadSettings, saveSettings } from './meta/settings';
 import type { CharChoice } from './meta/settings';
@@ -21,12 +22,13 @@ const profile = loadProfile();
 let setupMode: GameMode = 'ai';
 let match: Match | null = null;
 
-type Context = { kind: 'quick' } | { kind: 'campaign'; level: LevelNode };
+type Context = { kind: 'quick' } | { kind: 'tutorial' } | { kind: 'campaign'; level: LevelNode };
 let context: Context = { kind: 'quick' };
 
 const deckScreen = new DeckScreen(profile);
 const campaign = new CampaignScreen(profile, {
   play: level => startLevel(level),
+  tutorial: () => startTutorial(),
   editDeck: back => deckScreen.open(back),
 });
 
@@ -62,6 +64,14 @@ function startLevel(level: LevelNode): void {
   }, { kind: 'campaign', level });
 }
 
+/** Jack vs Jack against the easiest AI, with a scripted opening and a coach. */
+function startTutorial(): void {
+  runMatch({
+    mode: 'ai', bestOf: 1, decks: { a: ['jack'], b: ['jack'] }, difficulty: 'easy',
+    color: 'blue', title: 'Tutorial · Jack vs Jack', scenario: tutorialScenario(),
+  }, { kind: 'tutorial' });
+}
+
 function runMatch(cfg: MatchConfig, ctx: Context): void {
   stopMatch();
   context = ctx;
@@ -94,8 +104,15 @@ function showResult(e: GameEnd): void {
     cls = won ? 'win' : 'lose';
     reason = `${e.game.title} ${e.game.reason}`;
   }
-  if (ctx.kind === 'campaign' && won && !profile.completed.includes(ctx.level.id)) {
-    profile.completed.push(ctx.level.id);
+  if (ctx.kind === 'tutorial') {
+    // Any finished game completes the tutorial, won or lost
+    title = 'Tutorial complete!';
+    cls = 'win';
+    reason = `${e.winner === 'a' ? 'You won!' : 'The AI won this time.'} ${e.game.reason} The campaign is now open.`;
+  }
+  const doneId = ctx.kind === 'tutorial' ? TUTORIAL_ID : ctx.kind === 'campaign' && won ? ctx.level.id : null;
+  if (doneId && !profile.completed.includes(doneId)) {
+    profile.completed.push(doneId);
     saveProfile(profile);
   }
 
@@ -123,8 +140,11 @@ function showResult(e: GameEnd): void {
   $('series-result').innerHTML = seriesHtml;
 
   const buttons: ResultButton[] = [];
-  const exit = ctx.kind === 'campaign' ? openCampaign : toMenu;
-  if (!over) {
+  const exit = ctx.kind === 'quick' ? toMenu : openCampaign;
+  if (ctx.kind === 'tutorial') {
+    buttons.push({ label: 'To the campaign', primary: true, onClick: openCampaign });
+    buttons.push({ label: 'Replay tutorial', onClick: startTutorial });
+  } else if (!over) {
     buttons.push({ label: 'Next game', primary: true, onClick: () => match?.next() });
     buttons.push({ label: 'Leave series', onClick: () => askConfirm('Leave the series? It will be lost.', exit) });
   } else if (ctx.kind === 'campaign') {
@@ -203,7 +223,7 @@ function init(): void {
   $('btn-setup-back').onclick = () => showScreen('menu');
   $('btn-setup-start').onclick = startQuick;
   $('btn-to-menu').onclick = () => {
-    const exit = context.kind === 'campaign' ? openCampaign : toMenu;
+    const exit = context.kind === 'quick' ? toMenu : openCampaign;
     if (!match?.gameInProgress) return exit();
     askConfirm('Leave the game? It will be lost.', exit);
   };

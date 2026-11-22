@@ -16,6 +16,7 @@ const LEVEL_COUNT = CAMPAIGN.filter(n => n.kind === 'level').length;
 
 export interface CampaignHandlers {
   play(level: LevelNode): void;
+  tutorial(): void;
   editDeck(back: () => void): void;
 }
 
@@ -41,8 +42,8 @@ export class CampaignScreen {
 
   private onNode(n: CampaignNode): void {
     const state = nodeState(n, this.profile.completed);
-    if (state === 'soon') return showToast('The tutorial is coming soon');
     if (state === 'locked') return showToast('Complete the previous levels first');
+    if (n.kind === 'tutorial') return this.h.tutorial();
     if (n.kind === 'reward') {
       if (state === 'current') this.openReward(n);
       else {
@@ -108,7 +109,7 @@ export class CampaignScreen {
     const nodes = CAMPAIGN.map((n, i) => {
       const st = nodeState(n, done);
       let icon: string, sub: string;
-      if (n.kind === 'tutorial') { icon = '🎓'; sub = 'Coming soon'; }
+      if (n.kind === 'tutorial') { icon = '🎓'; sub = st === 'done' ? 'Play again' : 'Learn the basics'; }
       else if (n.kind === 'reward') {
         const got = this.profile.rewards[n.id];
         icon = st === 'done' && got ? CHARACTER_INFO[got].icon : '🎁';
