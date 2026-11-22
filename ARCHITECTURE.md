@@ -16,7 +16,8 @@ packages/
     types.ts         types: cards, actions, events, state, rule settings
     board.ts         6×6 board geometry
     pieces.ts        strength, points, "who beats whom"
-    abilities.ts     characters and abilities (registry)
+    abilities.ts     characters and abilities (registry; one-cell, two-cell and no-target abilities)
+    enter.ts         shared helpers: a piece entering a cell (mines), a piece leaving the game (graveyard)
     rules.ts         legal actions, action validation, Rule of Three Repeats ban
     engine.ts        game creation, applying actions, final countdown, game end
     view.ts          player view and event filtering
@@ -87,10 +88,10 @@ A level is data (`client/src/content/campaign.ts`): the opponent's deck, AI diff
 ## How a character is added
 
 1. `core/src/types.ts`: add the id to `CharacterId` (and to `AbilityId` if the ability is new).
-2. `core/src/abilities.ts`: describe the ability (`targets` and `apply`) and add an entry to `CHARACTERS`.
+2. `core/src/abilities.ts`: describe the ability (`targets` and `apply`) and add an entry to `CHARACTERS`. Two-cell abilities (swap) also define `partners`; abilities without a target set `noTarget` and use `NO_TARGET`. Effects that change movement or captures go into `moveTargets` / `attackTargets` in `rules.ts`; timed effects count down in `engine.ts`.
 3. `client/src/content/characters.ts`: name, icon, description, hint.
-4. If the ability has special value for the AI (like scouting or mines), teach `ai/src/evaluate.ts` and `ai/src/search.ts`.
-5. Tests in `core/test/rules.test.ts`, balance with `npm run sim`.
+4. If the ability has special value for the AI (like scouting or mines), teach `ai/src/evaluate.ts` and `ai/src/search.ts`. Abilities with many targets are root-only in the search (`tacticalAbility`). If it moves face-down cards or adds cards, update `ai/src/knowledge.ts` / `belief.ts`.
+5. Tests in `core/test/rules.test.ts` / `characters.test.ts`, balance with `npm run sim`.
 
 ## How future features fit in
 

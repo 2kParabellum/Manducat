@@ -18,6 +18,7 @@ export const W = {
   mineAdj: 0.6,       // ...plus per enemy piece next to it
   scoutCard: 0.8,     // scout: per unknown card in the area
   scoutMine: 3,       // scout: per likely mine in the area
+  haste: 0.4,         // own hasted card (a long move is still available)
 };
 
 export const WIN_VALUE = 1e6;
@@ -45,7 +46,7 @@ export function evaluate(s: SimState, me: Player): number {
     const c = b[i];
     if (!c || !c.faceUp) continue;
     open.push(i);
-    v += (c.owner === me ? 1 : -1) * (W.power[c.value] - 0.25 * (c.curse ?? 0));
+    v += (c.owner === me ? 1 : -1) * (W.power[c.value] - 0.25 * (c.curse ?? 0) + (c.haste ? W.haste : 0));
     for (const t of attackTargets(b, i)) {
       const T = b[t] as Piece;
       let g: number;
@@ -77,7 +78,7 @@ export function evaluate(s: SimState, me: Player): number {
     for (let yi = 0; yi < open.length; yi++) {
       const y = open[yi];
       const B = b[y] as Piece;
-      if (A.owner === B.owner || B.shield || B.poison || !canBeat(A, B)) continue;
+      if (A.owner === B.owner || B.shield || B.poison || B.stone || A.stone || !canBeat(A, B)) continue;
       const br = ROW[y], bc = COL[y];
       const d = Math.abs(ar - br) + Math.abs(ac - bc);
       const aligned = ar === br || ac === bc ? 1 : 0.5;

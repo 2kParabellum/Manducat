@@ -41,6 +41,30 @@ export const CHARACTER_INFO: Readonly<Record<CharacterId, CharacterInfo>> = {
     hint: 'Choose your face-up card to shield',
     desc: r => `Shields your card for ${r.effectTurns} opponent turns. The shield reflects one attack (the attacker stays in place) and breaks. Poison and mines go through it.`,
   },
+  swapper: {
+    name: 'Swapper', icon: '🔄', verb: 'Swap',
+    hint: 'Choose a card, then a neighbouring card to swap it with',
+    desc: () => 'Swaps two neighbouring cards (up/down/left/right): yours, the opponent\'s or face-down ones. Effects travel with the cards. Stone cards can\'t be swapped.',
+  },
+  runner: {
+    name: 'Runner', icon: '💨', verb: 'Haste',
+    hint: 'Choose your face-up card to haste',
+    desc: r => `Hastes your card for ${r.effectTurns} own turns: once, it may run any distance along a free path (mines only matter where it stops). No attack after the run. Any move or attack by the card uses the haste up.`,
+  },
+  necromancer: {
+    name: 'Necromancer', icon: '💀', verb: 'Summon',
+    hint: 'Choose an empty cell to summon a 3',
+    desc: () => 'Summons your own 3 on any empty cell. It stays until captured (worth 3 points). A mine on the cell blows it up.',
+  },
+  avenger: {
+    name: 'Avenger', icon: '⚔️', verb: 'Strike',
+    desc: r => `Strikes the opponent directly: they lose ${r.strikeDamage} points. Doesn't work while you lead on points.`,
+  },
+  gargoyle: {
+    name: 'Gargoyle', icon: '🗿', verb: 'Stone',
+    hint: 'Choose your face-up card to turn to stone',
+    desc: r => `Turns your card to stone for ${r.effectTurns} opponent turns: it can\'t move or attack, but can\'t be captured either (it still blocks lines).`,
+  },
 };
 
 export const charLabel = (c: CharacterId): string => `${CHARACTER_INFO[c].icon} ${CHARACTER_INFO[c].name}`;

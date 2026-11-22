@@ -60,6 +60,11 @@ export function describeEvent(e: GameEvent, view: PlayerView, name: NameFn): Eve
       else if (e.kind === 'poison') msg += `poisoned ${e.target!.value}${where}`;
       else if (e.kind === 'shield') msg += `shielded ${e.target!.value}${where}`;
       else if (e.kind === 'curse') msg += `cursed ${showVal(e.target!)}${where} — strength is now ${strength(e.target!) - 1}`;
+      else if (e.kind === 'swap') msg += `swapped ${coordName(e.i!)} and ${coordName(e.j!)}`;
+      else if (e.kind === 'haste') msg += `hasted ${e.target!.value}${where} — it may run along a free path`;
+      else if (e.kind === 'summon') msg += `summoned a 3${where}`;
+      else if (e.kind === 'strike') msg += `struck — ${name(opponent(e.p))} loses ${plural(e.pts ?? 0, 'point')}`;
+      else if (e.kind === 'stone') msg += `turned ${e.target!.value}${where} to stone`;
       return { cls: e.p, log: msg + '.', toast: msg };
     }
     case 'countdown': {

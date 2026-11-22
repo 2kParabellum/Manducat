@@ -6,8 +6,9 @@ import { simApply } from './belief';
 import type { SimState } from './belief';
 import { W, WIN_VALUE, evaluate } from './evaluate';
 
-/** Abilities that make sense deep in the search (scout and mines only at the root). */
-export const tacticalAbility = (kind: AbilityId): boolean => kind !== 'scout' && kind !== 'mine';
+/** Abilities that make sense deep in the search (scout, mines, swaps and summons — many targets — only at the root). */
+export const tacticalAbility = (kind: AbilityId): boolean =>
+  kind !== 'scout' && kind !== 'mine' && kind !== 'swap' && kind !== 'summon';
 
 export interface SearchOptions {
   /** How many best replies to consider at deep nodes (0 — all). */

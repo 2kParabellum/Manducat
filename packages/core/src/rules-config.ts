@@ -9,5 +9,6 @@ export const DEFAULT_RULES: Readonly<RulesConfig> = Object.freeze<RulesConfig>({
   finalMoves: 10,
   abilityCooldown: 15,
   effectTurns: 5,
+  strikeDamage: 2,
   army: [['1', 4], ['2', 3], ['3', 3], ['5', 2], ['8', 2], ['M', 1]],
 });

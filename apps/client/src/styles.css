@@ -305,6 +305,15 @@ body {
 .bar.shield i.on { background: #5ad1ff; }
 .card.shielded { box-shadow: 0 0 0 3px #5ad1ff inset; }
 .card.poisoned { box-shadow: 0 0 0 3px #6ee05c inset; }
+.badge.haste { bottom: 19px; right: 4px; }
+.badge.stone { bottom: 19px; left: 4px; }
+.badge.summoned { bottom: 3px; right: 4px; font-size: 10px; opacity: .85; }
+.bar.haste { top: 18px; }
+.bar.haste i.on { background: #ffd34d; }
+.bar.stone { top: 24px; }
+.bar.stone i.on { background: #b9b2a6; }
+.card.hasted { box-shadow: 0 0 0 3px #ffd34d inset; }
+.card.stoned { box-shadow: 0 0 0 3px #b9b2a6 inset; filter: grayscale(.6); }
 
 /* Mines, effect animations */
 .mine { font-size: 28px; opacity: .85; border-radius: 50%; padding: 6px; line-height: 1; }
@@ -437,6 +446,9 @@ body {
   .bar { height: 3px; left: 4px; right: 4px; }
   .bar.poison { bottom: 3px; }
   .bar.shield { bottom: 8px; }
+  .bar.haste { top: 13px; }
+  .bar.stone { top: 17px; }
+  .badge.haste, .badge.stone { bottom: 13px; }
   .mine { font-size: 20px; padding: 3px; }
   .fx { font-size: 32px; }
   .char-grid .opt { flex: 0 0 calc(33.3% - 6px); }

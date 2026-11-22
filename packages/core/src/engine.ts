@@ -1,6 +1,8 @@
 // Engine: game creation and applying actions. Knows nothing about UI or network.
 import { ABILITIES } from './abilities';
-import { BIT, CELLS } from './board';
+import { CELLS } from './board';
+import { bury, enterCell } from './enter';
+import type { ApplyContext } from './enter';
 import { identityOf, piecePoints } from './pieces';
 import { mulberry32, shuffle } from './rng';
 import { DEFAULT_RULES } from './rules-config';
@@ -53,27 +55,7 @@ export function createGame(setup: GameSetup): GameState {
   };
 }
 
-export interface ApplyContext {
-  /** What is under the card back (for flips in AI simulations where identities are unknown). */
-  card?: CardIdentity;
-  /** AI simulation: assume there is an enemy mine on the cell. */
-  forceMine?: boolean;
-}
-
-/** A piece enters a cell (move or placing M). Returns true if it blew up. */
-function enterCell(g: GameCore, p: Player, i: number, piece: Piece, ctx: ApplyContext, ev: GameEvent[]): boolean {
-  const m = g.mines[i];
-  if (!m && !ctx.forceMine) { g.board[i] = piece; return false; }
-  const enemy = opponent(piece.owner);
-  const enemyMine = !!ctx.forceMine || (m & BIT[enemy]) !== 0;
-  const pts = enemyMine ? piecePoints(piece, g.rules) : 0;   // nobody scores for stepping on their own mine
-  if (enemyMine) g.scores[enemy] += pts;
-  if (m) { g.mines = g.mines.slice(); g.mines[i] = 0; }
-  g.board[i] = null;
-  g.graveyard?.push({ owner: piece.owner, value: piece.value });
-  ev.push({ t: 'boom', p, i, piece, pts, by: enemyMine ? enemy : piece.owner });
-  return true;
-}
+export type { ApplyContext } from './enter';
 
 /**
  * Applies an action without legality checks and without the "no moves" check.
@@ -106,7 +88,8 @@ export function applyRaw(g: GameCore, a: Action, ctx: ApplyContext = {}): GameEv
       break;
     }
     case 'move': {
-      const piece = b[a.from] as Piece;
+      const was = b[a.from] as Piece;
+      const piece: Piece = was.haste ? { ...was, haste: 0 } : was;   // any move by a hasted card uses the haste up
       b[a.from] = null;
       ev.push({ t: 'move', p, from: a.from, to: a.to, piece });
       if (enterCell(g, p, a.to, piece, ctx, ev)) loud = true;
@@ -122,21 +105,23 @@ export function applyRaw(g: GameCore, a: Action, ctx: ApplyContext = {}): GameEv
       const att = b[a.from] as Piece, vic = b[a.to] as Piece;
       if (vic.shield) {   // the shield reflects the attack and breaks; the attacker stays in place
         b[a.to] = { ...vic, shield: 0 };
+        if (att.haste) b[a.from] = { ...att, haste: 0 };
         ev.push({ t: 'reflect', p, from: a.from, to: a.to, attacker: att, victim: vic });
         break;
       }
       loud = true;
       const pts = piecePoints(vic, R);
       g.scores[p] += pts;
-      g.graveyard?.push({ owner: vic.owner, value: vic.value });
+      bury(g, vic);
       b[a.from] = null;
-      const moved: Piece = att.curse ? { ...att, curse: 0 } : att;   // it captured — the curse is lifted
+      // It captured: the curse is lifted; an attack also uses up haste
+      const moved: Piece = att.curse || att.haste ? { ...att, curse: 0, haste: 0 } : att;
       ev.push({ t: 'capture', p, from: a.from, to: a.to, attacker: att, victim: vic, pts, uncursed: !!att.curse });
       if (vic.poison) {   // captured a poisoned card — dies itself (a shield doesn't help)
         b[a.to] = null;
         const pp = piecePoints(moved, R);
         g.scores[opp] += pp;
-        g.graveyard?.push({ owner: moved.owner, value: moved.value });
+        bury(g, moved);
         ev.push({ t: 'poisonKill', p, i: a.to, piece: moved, pts: pp });
       } else {
         b[a.to] = moved;
@@ -145,7 +130,7 @@ export function applyRaw(g: GameCore, a: Action, ctx: ApplyContext = {}): GameEv
     }
     case 'ability': {
       g.cooldown[p] = R.abilityCooldown;
-      ABILITIES[a.kind].apply(g, p, a.i, ev);
+      if (ABILITIES[a.kind].apply(g, p, a.i, ev, a.j, ctx)) loud = true;
       break;
     }
   }
@@ -157,11 +142,18 @@ export function applyRaw(g: GameCore, a: Action, ctx: ApplyContext = {}): GameEv
   g.recent = p === 'blue' ? { blue: recent, red: g.recent.red } : { blue: g.recent.blue, red: recent };
   if (g.cooldown[p] > 0) g.cooldown[p]--;
 
-  // Poison and shield on the opponent's pieces count down the opponent's turns
+  // Poison, shield and stone on the opponent's pieces count down the opponent's turns;
+  // haste on the player's own pieces counts down their own turns (not on the turn it was given)
+  const justHasted = a.type === 'ability' && a.kind === 'haste';
   for (let i = 0; i < b.length; i++) {
     const c = b[i];
-    if (c && c.faceUp && c.owner === opp && (c.poison || c.shield)) {
-      b[i] = { ...c, poison: c.poison ? c.poison - 1 : 0, shield: c.shield ? c.shield - 1 : 0 };
+    if (!c || !c.faceUp) continue;
+    if (c.owner === opp && (c.poison || c.shield || c.stone)) {
+      b[i] = {
+        ...c, poison: c.poison ? c.poison - 1 : 0, shield: c.shield ? c.shield - 1 : 0, stone: c.stone ? c.stone - 1 : 0,
+      };
+    } else if (c.owner === p && c.haste && !justHasted) {
+      b[i] = { ...c, haste: c.haste - 1 };
     }
   }
 

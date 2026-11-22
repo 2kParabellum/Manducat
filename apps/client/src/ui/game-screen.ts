@@ -1,7 +1,7 @@
 // Game screen. Draws only the player view from the session and submits actions to it.
 // Session updates are played one by one: first the move's animations, then the next move.
 import {
-  BIT, CELLS, PLAYERS, abilityOf, abilityTargets, attackTargets, bannedAction, emptyCells, keyOf, moveTargets, scoutArea, scoutCorner,
+  ABILITIES, BIT, CELLS, NO_TARGET, PLAYERS, abilityOf, abilityTargets, attackTargets, bannedAction, emptyCells, keyOf, moveTargets, scoutArea, scoutCorner,
   strength,
 } from '@manducat/core';
 import type { Action, CardIdentity, GameEvent, GameResult, Piece, Player, PlayerView, ScoutCell } from '@manducat/core';
@@ -10,7 +10,8 @@ import { NAMES, describeEvent, describeResult, plural } from '../content/describ
 import type { GameSession, SessionUpdate } from '../session/types';
 import { $, askConfirm, showToast, sleep } from './dom';
 
-type Selection = { type: 'cell'; i: number } | { type: 'hand' } | { type: 'ability' };
+/** ability.first — the first chosen cell of a two-cell ability (swap). */
+type Selection = { type: 'cell'; i: number } | { type: 'hand' } | { type: 'ability'; first?: number };
 
 const PEEK_MS = 3000;
 const AI_PREVIEW_MS = 550;
@@ -121,7 +122,8 @@ export class GameScreen {
     this.lastAction = a?.type ?? null;
     this.lastMove = !a ? this.lastMove
       : a.type === 'move' || a.type === 'attack' ? [a.from, a.to]
-      : a.type === 'ability' && (a.kind === 'scout' || a.kind === 'mine') ? [] : [a.i];
+      : a.type === 'ability' && (a.kind === 'scout' || a.kind === 'mine' || a.i === NO_TARGET) ? []
+      : a.type === 'ability' && a.j !== undefined ? [a.i, a.j] : [a.i];
     if (!a && u.events.some(e => e.t === 'ability')) this.lastMove = [];
 
     let delay = 0;
@@ -194,6 +196,20 @@ export class GameScreen {
 
     if (sel?.type === 'ability') {
       const kind = abilityOf(v.chars[p])!;
+      const def = ABILITIES[kind];
+      if (def.partners) {
+        // Two-cell ability: first pick a card, then its partner
+        if (sel.first === undefined) {
+          if (abilityTargets(v, p).includes(i)) { this.selected = { type: 'ability', first: i }; return this.render(); }
+        } else if (sel.first === i) {
+          this.selected = { type: 'ability' };
+          return this.render();
+        } else if (def.partners(v, p, sel.first).includes(i)) {
+          return this.submit({ type: 'ability', kind, i: Math.min(sel.first, i), j: Math.max(sel.first, i) });
+        }
+        this.selected = null;
+        return this.render();
+      }
       const t = kind === 'scout' ? scoutCorner(i) : i;
       if (abilityTargets(v, p).includes(t)) return this.submit({ type: 'ability', kind, i: t });
       this.selected = null;
@@ -237,7 +253,11 @@ export class GameScreen {
     if (!v || !this.canAct() || pl !== v.turn) return;
     if (!abilityOf(v.chars[pl]) || v.cooldown[pl] > 0) return;
     if (this.selected?.type === 'ability') { this.selected = null; return this.render(); }
-    if (abilityTargets(v, pl).length === 0) return showToast('No valid targets for the ability');
+    const kind = abilityOf(v.chars[pl])!;
+    if (abilityTargets(v, pl).length === 0) {
+      return showToast(kind === 'strike' ? 'Strike works only when you are not ahead and the opponent has points' : 'No valid targets for the ability');
+    }
+    if (ABILITIES[kind].noTarget) return this.submit({ type: 'ability', kind, i: NO_TARGET });
     this.selected = { type: 'ability' };
     this.hover = null;
     this.render();
@@ -302,7 +322,9 @@ export class GameScreen {
     } else if (sel?.type === 'hand') {
       places = emptyCells(v.board);
     } else if (sel?.type === 'ability') {
-      if (abilityOf(v.chars[p]) === 'scout') { if (this.hover !== null) scoutCells = scoutArea(scoutCorner(this.hover)); }
+      const kind = abilityOf(v.chars[p])!;
+      if (kind === 'scout') { if (this.hover !== null) scoutCells = scoutArea(scoutCorner(this.hover)); }
+      else if (sel.first !== undefined) abil = ABILITIES[kind].partners!(v, p, sel.first);
       else abil = abilityTargets(v, p);
     }
 
@@ -357,7 +379,7 @@ export class GameScreen {
 
       const cEl = el.querySelector('.card');
       if (cEl && card) {
-        cEl.classList.toggle('selected', sel?.type === 'cell' && sel.i === i);
+        cEl.classList.toggle('selected', (sel?.type === 'cell' && sel.i === i) || (sel?.type === 'ability' && sel.first === i));
         const mine = card.faceUp && card.owner === p && myTurn;
         cEl.classList.toggle('not-mine', card.faceUp && !mine && !attacks.includes(i) && !abil.includes(i));
       }
@@ -370,7 +392,8 @@ export class GameScreen {
     ti.textContent = v.result ? 'Game over' : this.session.info.mode === 'ai' ? (this.isLocal(p) ? 'Your turn' : 'AI\'s turn') : `${NAMES[p]} to move`;
 
     let hint = '';
-    if (sel?.type === 'ability') hint = (CHARACTER_INFO[v.chars[p]].hint ?? '') + ' · Esc to cancel';
+    if (sel?.type === 'ability' && sel.first !== undefined) hint = 'Now choose a neighbouring card to swap with · Esc to cancel';
+    else if (sel?.type === 'ability') hint = (CHARACTER_INFO[v.chars[p]].hint ?? '') + ' · Esc to cancel';
     else if (sel?.type === 'hand') hint = 'Choose an empty cell for M · Esc to cancel';
     else if (banned >= 0) hint = 'Rule of Three Repeats: the red cell is blocked this turn';
     $('hint-line').textContent = hint;
@@ -445,7 +468,8 @@ export class GameScreen {
 // ---------- card elements ----------
 
 function pieceSig(c: Piece): string {
-  return c.owner + c.value + 'c' + (c.curse ?? 0) + 'p' + (c.poison ?? 0) + 's' + (c.shield ?? 0);
+  return c.owner + c.value + 'c' + (c.curse ?? 0) + 'p' + (c.poison ?? 0) + 's' + (c.shield ?? 0) +
+    'h' + (c.haste ?? 0) + 'x' + (c.stone ?? 0) + (c.summoned ? 'z' : '');
 }
 
 function makeBackEl(): HTMLDivElement {
@@ -487,6 +511,17 @@ function makeCardEl(card: Piece, effectTurns: number, gold = false): HTMLDivElem
     el.insertAdjacentHTML('beforeend', '<span class="badge shield">🛡️</span>');
     el.appendChild(makeBar('shield', card.shield, effectTurns));
   }
+  if (card.haste) {
+    el.classList.add('hasted');
+    el.insertAdjacentHTML('beforeend', '<span class="badge haste">💨</span>');
+    el.appendChild(makeBar('haste', card.haste, effectTurns));
+  }
+  if (card.stone) {
+    el.classList.add('stoned');
+    el.insertAdjacentHTML('beforeend', '<span class="badge stone">🗿</span>');
+    el.appendChild(makeBar('stone', card.stone, effectTurns));
+  }
+  if (card.summoned) el.insertAdjacentHTML('beforeend', '<span class="badge summoned" title="Summoned">💀</span>');
   return el;
 }
 

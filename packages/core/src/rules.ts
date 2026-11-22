@@ -1,11 +1,19 @@
 // Which actions are possible in a position.
 import { ABILITIES, abilityOf } from './abilities';
-import { DIRS, RAYS, idx, inside, rc } from './board';
+import { DIRS, NEIGHBORS, RAYS, idx, inside, rc } from './board';
 import { canBeat } from './pieces';
 import type { AbilityId, Action, Cell, GameCore, Player } from './types';
 
-/** Adjacent empty cells a card can move to. */
+/**
+ * Empty cells the card at i can move to: adjacent ones; a hasted card (Runner) — any empty cell
+ * reachable along a free orthogonal path (mines on the way don't matter); a stone card — none.
+ */
 export function moveTargets(board: readonly Cell[], i: number): number[] {
+  const me = board[i];
+  if (me && me.faceUp) {
+    if (me.stone) return [];
+    if (me.haste) return reachable(board, i);
+  }
   const [r, c] = rc(i);
   const res: number[] = [];
   for (const [dr, dc] of DIRS) {
@@ -15,10 +23,29 @@ export function moveTargets(board: readonly Cell[], i: number): number[] {
   return res;
 }
 
-/** What the card at i can capture: the first card along a line (rook-like), face up, enemy, by strength. */
+/** Empty cells reachable from i through empty cells (breadth-first). */
+function reachable(board: readonly Cell[], i: number): number[] {
+  const seen = new Set<number>([i]);
+  const queue = [i];
+  const res: number[] = [];
+  for (let q = 0; q < queue.length; q++) {
+    for (const j of NEIGHBORS[queue[q]]) {
+      if (seen.has(j) || board[j] !== null) continue;
+      seen.add(j);
+      queue.push(j);
+      res.push(j);
+    }
+  }
+  return res;
+}
+
+/**
+ * What the card at i can capture: the first card along a line (rook-like), face up, enemy, by strength.
+ * Stone cards (Gargoyle) neither attack nor can be captured, but still block the line.
+ */
 export function attackTargets(board: readonly Cell[], i: number): number[] {
   const me = board[i];
-  if (!me || !me.faceUp) return [];
+  if (!me || !me.faceUp || me.stone) return [];
   const res: number[] = [];
   const rays = RAYS[i];
   for (let d = 0; d < 4; d++) {
@@ -26,7 +53,7 @@ export function attackTargets(board: readonly Cell[], i: number): number[] {
     for (let k = 0; k < ray.length; k++) {
       const target = board[ray[k]];
       if (target === null) continue;
-      if (target.faceUp && target.owner !== me.owner && canBeat(me, target)) res.push(ray[k]);
+      if (target.faceUp && target.owner !== me.owner && !target.stone && canBeat(me, target)) res.push(ray[k]);
       break;
     }
   }
@@ -114,7 +141,12 @@ function rawActions(g: GameCore, player: Player, abilityFilter?: (kind: AbilityI
   }
   const kind = abilityOf(g.chars[player]);
   if (kind && g.cooldown[player] === 0 && (!abilityFilter || abilityFilter(kind))) {
-    for (const i of ABILITIES[kind].targets(g, player)) acts.push({ type: 'ability', kind, i });
+    const def = ABILITIES[kind];
+    for (const i of def.targets(g, player)) {
+      if (!def.partners) { acts.push({ type: 'ability', kind, i }); continue; }
+      // Two-cell abilities: each unordered pair once, i < j
+      for (const j of def.partners(g, player, i)) if (j > i) acts.push({ type: 'ability', kind, i, j });
+    }
   }
   return acts;
 }

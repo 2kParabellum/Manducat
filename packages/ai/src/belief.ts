@@ -32,7 +32,7 @@ export function makeBelief(view: PlayerView, k: Knowledge): SimState {
       hidden++;
       return HIDDEN;
     }
-    pool[keyOf(c.owner, c.value)]--;
+    if (!c.summoned) pool[keyOf(c.owner, c.value)]--;   // summoned cards are not part of the army
     return c;   // face-up cards are never mutated, so they can be shared
   });
   for (const p of ['blue', 'red'] as const) pool[p + 'M'] -= view.hand[p];

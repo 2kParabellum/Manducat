@@ -32,6 +32,12 @@ export interface Piece {
   readonly poison?: number;
   /** Opponent turns left on the shield. */
   readonly shield?: number;
+  /** Runner: own turns left on haste (one long move along a free path). Any move or attack by the card removes it. */
+  readonly haste?: number;
+  /** Gargoyle: opponent turns left as stone (cannot move, attack or be captured). */
+  readonly stone?: number;
+  /** Necromancer's summoned 3: not part of the army, never goes to the graveyard. */
+  readonly summoned?: boolean;
 }
 
 /**
@@ -48,8 +54,10 @@ export interface Concealed {
 
 export type Cell = Piece | Concealed | null;
 
-export type AbilityId = 'scout' | 'poison' | 'curse' | 'mine' | 'shield';
-export type CharacterId = 'jack' | 'scout' | 'poisoner' | 'witch' | 'miner' | 'defender';
+export type AbilityId = 'scout' | 'poison' | 'curse' | 'mine' | 'shield' | 'swap' | 'haste' | 'summon' | 'strike' | 'stone';
+export type CharacterId =
+  | 'jack' | 'scout' | 'poisoner' | 'witch' | 'miner' | 'defender'
+  | 'swapper' | 'runner' | 'necromancer' | 'avenger' | 'gargoyle';
 
 /** A player's action for the turn. */
 export type Action =
@@ -57,7 +65,8 @@ export type Action =
   | { type: 'move'; from: number; to: number }
   | { type: 'attack'; from: number; to: number }
   | { type: 'place'; i: number }
-  | { type: 'ability'; kind: AbilityId; i: number };
+  /** i — target cell (-1 for abilities without a target); j — second cell (swap only, j > i). */
+  | { type: 'ability'; kind: AbilityId; i: number; j?: number };
 
 export type ResultReason = 'score' | 'quiet' | 'noMoves' | 'surrender';
 
@@ -82,6 +91,8 @@ export interface RulesConfig {
   abilityCooldown: number;
   /** Poison and shield last this many opponent turns. */
   effectTurns: number;
+  /** Avenger: points the strike takes from the opponent. */
+  strikeDamage: number;
   /** Each player's army: [value, count]. */
   army: ReadonlyArray<readonly [UnitValue, number]>;
 }
@@ -137,7 +148,8 @@ export type GameEvent =
   | { t: 'reflect'; p: Player; from: number; to: number; attacker: Piece; victim: Piece }
   | { t: 'boom'; p: Player; i: number; piece: Piece; pts: number; by: Player }
   /** i and target are absent if the ability is secret (scout, mine) and the opponent sees the event. */
-  | { t: 'ability'; p: Player; kind: AbilityId; i?: number; target?: Piece }
+  /** j — second cell of a swap; pts — points taken by the Avenger's strike. */
+  | { t: 'ability'; p: Player; kind: AbilityId; i?: number; j?: number; target?: Piece; pts?: number }
   /** The final countdown has started: the game ends after this many own moves per player. */
   | { t: 'countdown'; p: Player; moves: number }
   /** Scout result — a private event only for the scout. */

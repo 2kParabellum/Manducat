@@ -7,7 +7,8 @@ export function positionKey(g: GameCore): string {
   let k = g.turn[0] + g.hand.blue + g.hand.red;
   for (const c of g.board) {
     k += c === null ? '.' : !c.faceUp ? '#'
-      : c.owner[0] + c.value + (c.curse || '') + (c.poison ? 'p' : '') + (c.shield ? 's' : '') + ',';
+      : c.owner[0] + c.value + (c.curse || '') + (c.poison ? 'p' : '') + (c.shield ? 's' : '') +
+        (c.haste ? 'h' : '') + (c.stone ? 'x' : '') + ',';
   }
   return k;
 }
@@ -41,6 +42,8 @@ export class Knowledge {
           break;
         case 'ability':
           if (e.kind === 'mine' && e.p === enemy) this.enemyMined(view);
+          else if (e.kind === 'summon' && e.i !== undefined) this.entered(e.i, events, prevMines);
+          else if (e.kind === 'swap' && e.i !== undefined && e.j !== undefined) this.swapped(e.i, e.j);
           break;
         case 'scout':
           if (e.p !== this.me) break;
@@ -76,6 +79,15 @@ export class Knowledge {
     const boom = events.some(e => e.t === 'boom' && e.i === X);
     if (!boom) this.clearCell(X);
     else if (!(prevMines[X] & BIT[this.me])) this.consumeMine(X);
+  }
+
+  /** Two cards were swapped: peeked face-down cards travel with them. */
+  private swapped(i: number, j: number): void {
+    const a = this.known.get(i), b = this.known.get(j);
+    this.known.delete(i);
+    this.known.delete(j);
+    if (a) this.known.set(j, a);
+    if (b) this.known.set(i, b);
   }
 
   /** The opponent placed a mine: it is somewhere among the empty cells, more likely in the path of my pieces. */

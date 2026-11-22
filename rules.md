@@ -53,7 +53,7 @@ On your turn you do exactly one action:
 
 - Using an ability takes your whole turn and counts as a quiet move.
 - An ability is ready at the start of the game. After use it can be used again only **15 own turns later**.
-- Timed effects (poison, shield) last **5 opponent turns**.
+- Timed effects (poison, shield, stone) last **5 opponent turns**; Runner's haste lasts **5 own turns**.
 
 | Character | Ability |
 |---|---|
@@ -63,6 +63,11 @@ On your turn you do exactly one action:
 | **Witch** | Curses an **enemy** face-up card: −1 to its strength and points. Stacks. Not on M, not on cards with strength 1. The curse is lifted when that card captures something. A 1 still beats a cursed 8. |
 | **Miner** | Secretly mines an empty cell (only the Miner sees it). Any card that enters the cell (move or placing M) explodes and is removed; the mine is used up. If it was an enemy mine, the mine's owner scores the card's value; stepping on your own mine kills your card with no points. Shields don't help. |
 | **Defender** | Shields one of **your own** face-up cards. The shield reflects one attack: the attacker stays in place, nothing is captured, and the shield breaks. Poison and mines go through the shield. |
+| **Swapper** | Swaps two orthogonally adjacent cards: yours, the opponent's or face-down ones (face-down cards are not revealed). Effects (curse, poison, shield, haste) travel with the cards. Stone cards can't be swapped. Both cells are occupied, so mines never trigger. |
+| **Runner** | Hastes one of **your own** face-up cards for **5 own turns**. While hasted, the card may move to any empty cell reachable along a free orthogonal path (any distance). Mines on the way don't matter — only a mine in the cell where it stops. A run can't end with an attack. **Any** move or attack by the hasted card uses the haste up. |
+| **Necromancer** | Summons a **3** of your own on any empty cell. It stays until it is captured and is worth 3 points like any 3. If the cell has a mine, the summoned card blows up (like placing M). Summoned cards are marked 💀 and are not part of the army (they don't count in the graveyard). |
+| **Avenger** | Strikes the opponent directly: they lose **2 points** (not below 0). Can't be used while the Avenger leads on points (works on a tie) or when the opponent has 0 points. No target. |
+| **Gargoyle** | Turns one of **your own** face-up cards to **stone** for 5 opponent turns: it can't move or attack, and it can't be captured (it still blocks line attacks). Stone cards can't be swapped. |
 
 ## Series (Bo3 / Bo5)
 
