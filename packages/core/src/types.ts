@@ -64,7 +64,7 @@ export type ResultReason = 'score' | 'quiet' | 'noMoves' | 'surrender';
 export interface GameResult {
   winner: Player;
   reason: ResultReason;
-  /** quiet — who made the last quiet move; surrender — who surrendered. */
+  /** quiet — who made the last move of the final countdown; surrender — who surrendered. */
   mover?: Player;
 }
 
@@ -74,8 +74,10 @@ export interface RulesConfig {
   gPoints: number;
   mPoints: number;
   gCount: number;
-  /** Own moves in a row without flips or captures → game over. */
+  /** Own moves in a row without flips or captures → the final countdown starts. */
   quietLimit: number;
+  /** Length of the final countdown in own moves per player. Flips and captures don't stop it. */
+  finalMoves: number;
   /** Ability can be used once per this many own turns. */
   abilityCooldown: number;
   /** Poison and shield last this many opponent turns. */
@@ -98,6 +100,10 @@ export interface GameCore {
   mines: number[];
   cooldown: PerPlayer<number>;
   quiet: PerPlayer<number>;
+  /** Final countdown: half-moves left until the game ends (0 — not running). */
+  countdown: number;
+  /** Rule of Three Repeats: each player's last own actions as repeat keys (see repeatKey). */
+  recent: PerPlayer<readonly string[]>;
   chars: PerPlayer<CharacterId>;
   result: GameResult | null;
   /** Captured/killed cards and collected G — public information. */
@@ -132,6 +138,8 @@ export type GameEvent =
   | { t: 'boom'; p: Player; i: number; piece: Piece; pts: number; by: Player }
   /** i and target are absent if the ability is secret (scout, mine) and the opponent sees the event. */
   | { t: 'ability'; p: Player; kind: AbilityId; i?: number; target?: Piece }
+  /** The final countdown has started: the game ends after this many own moves per player. */
+  | { t: 'countdown'; p: Player; moves: number }
   /** Scout result — a private event only for the scout. */
   | { t: 'scout'; p: Player; cells: ScoutCell[] }
   | { t: 'end'; result: GameResult };

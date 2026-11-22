@@ -1,7 +1,8 @@
 // Game screen. Draws only the player view from the session and submits actions to it.
 // Session updates are played one by one: first the move's animations, then the next move.
 import {
-  BIT, CELLS, PLAYERS, abilityOf, abilityTargets, attackTargets, emptyCells, keyOf, moveTargets, scoutArea, scoutCorner, strength,
+  BIT, CELLS, PLAYERS, abilityOf, abilityTargets, attackTargets, bannedAction, emptyCells, keyOf, moveTargets, scoutArea, scoutCorner,
+  strength,
 } from '@manducat/core';
 import type { Action, CardIdentity, GameEvent, GameResult, Piece, Player, PlayerView, ScoutCell } from '@manducat/core';
 import { CHARACTER_INFO } from '../content/characters';
@@ -13,6 +14,7 @@ type Selection = { type: 'cell'; i: number } | { type: 'hand' } | { type: 'abili
 
 const PEEK_MS = 3000;
 const AI_PREVIEW_MS = 550;
+const BANNED_MSG = 'Rule of Three Repeats: this move can not be repeated a fourth time. Make another move.';
 
 export interface GameOverInfo {
   title: string;
@@ -202,6 +204,11 @@ export class GameScreen {
       this.selected = null;
     }
     if (sel?.type === 'cell') {
+      const ban = bannedAction(v, p);
+      if (ban && (ban.type === 'move' || ban.type === 'attack') && ban.from === sel.i && ban.to === i) {
+        showToast(BANNED_MSG);
+        return;
+      }
       if (moveTargets(v.board, sel.i).includes(i)) return this.submit({ type: 'move', from: sel.i, to: i });
       if (attackTargets(v.board, sel.i).includes(i)) return this.submit({ type: 'attack', from: sel.i, to: i });
       if (sel.i === i) { this.selected = null; return this.render(); }
@@ -282,9 +289,16 @@ export class GameScreen {
     const p = v.turn;
     const myTurn = this.isLocal(p) && !v.result;
     let moves: number[] = [], attacks: number[] = [], places: number[] = [], abil: number[] = [], scoutCells: number[] = [];
+    let banned = -1;
     if (sel?.type === 'cell') {
       moves = moveTargets(v.board, sel.i);
       attacks = attackTargets(v.board, sel.i);
+      const ban = myTurn ? bannedAction(v, p) : null;
+      if (ban && (ban.type === 'move' || ban.type === 'attack') && ban.from === sel.i) {
+        banned = ban.to;
+        moves = moves.filter(t => t !== banned);
+        attacks = attacks.filter(t => t !== banned);
+      }
     } else if (sel?.type === 'hand') {
       places = emptyCells(v.board);
     } else if (sel?.type === 'ability') {
@@ -297,6 +311,7 @@ export class GameScreen {
       el.classList.toggle('last-move', this.lastMove.includes(i));
       el.classList.toggle('move-target', moves.includes(i) || places.includes(i));
       el.classList.toggle('attack-target', attacks.includes(i));
+      el.classList.toggle('banned-target', banned === i);
       el.classList.toggle('ability-target', abil.includes(i));
       el.classList.toggle('scout-area', scoutCells.includes(i));
 
@@ -357,6 +372,7 @@ export class GameScreen {
     let hint = '';
     if (sel?.type === 'ability') hint = (CHARACTER_INFO[v.chars[p]].hint ?? '') + ' · Esc to cancel';
     else if (sel?.type === 'hand') hint = 'Choose an empty cell for M · Esc to cancel';
+    else if (banned >= 0) hint = 'Rule of Three Repeats: the red cell is blocked this turn';
     $('hint-line').textContent = hint;
 
     this.renderLog();
@@ -398,8 +414,15 @@ export class GameScreen {
 
     const q = v.quiet[pl];
     const qEl = $(`quiet-${pl}`);
-    qEl.textContent = q > 0 ? `Quiet moves: ${q}/${v.rules.quietLimit}` : '';
-    qEl.classList.toggle('warn', q >= v.rules.quietLimit - 5);
+    if (v.countdown > 0 && !v.result) {
+      // Half-moves alternate starting with the player to move
+      const left = pl === p ? Math.ceil(v.countdown / 2) : Math.floor(v.countdown / 2);
+      qEl.textContent = `⚠️ Game ends in ${plural(left, 'move')}`;
+      qEl.classList.add('warn');
+    } else {
+      qEl.textContent = q > 0 ? `Quiet moves: ${q}/${v.rules.quietLimit}` : '';
+      qEl.classList.toggle('warn', q >= v.rules.quietLimit - 5);
+    }
   }
 
   private addLog(cls: string, text: string): void {

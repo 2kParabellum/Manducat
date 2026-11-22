@@ -4,7 +4,7 @@ import { BIT, CELLS } from './board';
 import { identityOf, piecePoints } from './pieces';
 import { mulberry32, shuffle } from './rng';
 import { DEFAULT_RULES } from './rules-config';
-import { listActions } from './rules';
+import { REPEAT_WINDOW, listActions, repeatKey } from './rules';
 import type {
   Action, CardIdentity, CharacterId, GameCore, GameEvent, GameResult, GameState, PerPlayer, Piece, Player, RulesConfig,
 } from './types';
@@ -43,6 +43,8 @@ export function createGame(setup: GameSetup): GameState {
     mines: new Array(CELLS).fill(0),
     cooldown: { blue: 0, red: 0 },
     quiet: { blue: 0, red: 0 },
+    countdown: 0,
+    recent: { blue: [], red: [] },
     chars: { ...setup.chars },
     result: null,
     graveyard: [],
@@ -149,6 +151,10 @@ export function applyRaw(g: GameCore, a: Action, ctx: ApplyContext = {}): GameEv
   }
 
   if (loud) { g.quiet.blue = 0; g.quiet.red = 0; } else g.quiet[p]++;
+
+  // Rule of Three Repeats: remember the player's last own actions (a new array — states may share it)
+  const recent = [...g.recent[p].slice(1 - REPEAT_WINDOW), repeatKey(a)];
+  g.recent = p === 'blue' ? { blue: recent, red: g.recent.red } : { blue: g.recent.blue, red: recent };
   if (g.cooldown[p] > 0) g.cooldown[p]--;
 
   // Poison and shield on the opponent's pieces count down the opponent's turns
@@ -164,12 +170,22 @@ export function applyRaw(g: GameCore, a: Action, ctx: ApplyContext = {}): GameEv
   if (sp >= R.winScore || so >= R.winScore) {
     const w = sp >= R.winScore && so >= R.winScore ? (sp >= so ? p : opp) : (sp >= R.winScore ? p : opp);
     g.result = { winner: w, reason: 'score' };
+  } else if (g.countdown > 0) {
+    // Final countdown: flips and captures don't stop it
+    if (--g.countdown === 0) endByPoints(g, p, sp, so);
   } else if (g.quiet[p] >= R.quietLimit) {
-    // more points wins; on a tie the player who made this move loses
-    g.result = { winner: sp > so ? p : opp, reason: 'quiet', mover: p };
+    // Too many quiet moves: the final countdown starts (the opponent moves first, so this player moves last)
+    g.countdown = 2 * R.finalMoves;
+    if (g.countdown === 0) endByPoints(g, p, sp, so);
+    else ev.push({ t: 'countdown', p, moves: R.finalMoves });
   }
   g.turn = opp;
   return ev;
+}
+
+/** End of the final countdown: more points wins; on a tie the player who made the last move loses. */
+function endByPoints(g: GameCore, p: Player, sp: number, so: number): void {
+  g.result = { winner: sp > so ? p : opponent(p), reason: 'quiet', mover: p };
 }
 
 /** Applies an action to the real game (check legality beforehand with isLegalAction). */

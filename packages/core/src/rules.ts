@@ -47,11 +47,57 @@ export function abilityTargets(g: GameCore, p: Player): number[] {
 export const abilityReady = (g: GameCore, p: Player): boolean =>
   abilityOf(g.chars[p]) !== null && g.cooldown[p] === 0;
 
+// ---------- Rule of Three Repeats ----------
+
+/** How many own actions the Rule of Three Repeats looks at. */
+export const REPEAT_WINDOW = 6;
+/** Key of an action that is never part of a repeat (flip, place, ability). */
+const NO_REPEAT = '-';
+
+/** Key of an action for repeat detection: moves and attacks by their cells, everything else never repeats. */
+export const repeatKey = (a: Action): string =>
+  a.type === 'move' || a.type === 'attack' ? `${a.type}:${a.from}-${a.to}` : NO_REPEAT;
+
+/**
+ * Rule of Three Repeats: if a player's last 6 own actions are A, B, A, B, A, B,
+ * returns the key of A — the action they may not make now. Otherwise null.
+ */
+export function repeatBanKey(g: GameCore, player: Player): string | null {
+  const r = g.recent[player];
+  const n = r.length;
+  if (n < REPEAT_WINDOW) return null;
+  const a = r[n - 6], b = r[n - 5];
+  if (a === NO_REPEAT || b === NO_REPEAT || a === b) return null;
+  for (let k = n - 4; k < n; k += 2) if (r[k] !== a || r[k + 1] !== b) return null;
+  return a;
+}
+
+/**
+ * The action banned for the player by the Rule of Three Repeats, if any.
+ * The ban is lifted when it is the player's only possible action.
+ */
+export function bannedAction(g: GameCore, player: Player): Action | null {
+  const key = repeatBanKey(g, player);
+  if (!key) return null;
+  const all = rawActions(g, player);
+  const hit = all.find(a => repeatKey(a) === key);
+  return hit && all.length > 1 ? hit : null;
+}
+
 /**
  * All possible actions of a player.
  * abilityFilter — which abilities to consider (the AI drops the "informational" ones deep in the search).
  */
 export function listActions(g: GameCore, player: Player, abilityFilter?: (kind: AbilityId) => boolean): Action[] {
+  const acts = rawActions(g, player, abilityFilter);
+  const key = repeatBanKey(g, player);
+  if (!key) return acts;
+  const allowed = acts.filter(a => repeatKey(a) !== key);
+  return allowed.length > 0 ? allowed : acts;
+}
+
+/** All actions ignoring the Rule of Three Repeats. */
+function rawActions(g: GameCore, player: Player, abilityFilter?: (kind: AbilityId) => boolean): Action[] {
   const board = g.board;
   const acts: Action[] = [];
   let hasEmpty = false;

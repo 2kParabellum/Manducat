@@ -63,6 +63,7 @@ export function fillRules(): void {
   const r = DEFAULT_RULES;
   document.querySelectorAll('.win-score').forEach(e => (e.textContent = String(r.winScore)));
   document.querySelectorAll('.quiet-limit').forEach(e => (e.textContent = String(r.quietLimit)));
+  document.querySelectorAll('.final-moves').forEach(e => (e.textContent = String(r.finalMoves)));
   document.querySelectorAll('.ability-cd').forEach(e => (e.textContent = String(r.abilityCooldown)));
   $('rules-win-score').textContent = String(r.winScore);
   $('rules-m-points').textContent = String(r.mPoints);

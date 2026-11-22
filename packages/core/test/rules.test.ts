@@ -13,7 +13,7 @@ function game(cells: Record<number, Cell>, extra: Partial<GameCore> = {}): GameC
   return {
     rules: DEFAULT_RULES, board, turn: 'blue',
     scores: { blue: 0, red: 0 }, hand: { blue: 0, red: 0 }, mines: new Array(36).fill(0),
-    cooldown: { blue: 0, red: 0 }, quiet: { blue: 0, red: 0 },
+    cooldown: { blue: 0, red: 0 }, quiet: { blue: 0, red: 0 }, countdown: 0, recent: { blue: [], red: [] },
     chars: { blue: 'jack', red: 'jack' }, result: null, ...extra,
   };
 }

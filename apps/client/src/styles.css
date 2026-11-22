@@ -330,6 +330,8 @@ body {
 
 .cell.move-target { background: rgba(120, 255, 160, .18); cursor: pointer; box-shadow: inset 0 0 0 2px rgba(120,255,160,.6); }
 .cell.move-target:hover { background: rgba(120, 255, 160, .32); }
+.cell.banned-target { background: rgba(255, 70, 70, .22); box-shadow: inset 0 0 0 2px rgba(255,90,90,.75); cursor: not-allowed; }
+.cell.banned-target::after { content: "✕"; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: rgba(255,110,110,.9); font-size: 26px; pointer-events: none; }
 .cell.attack-target .card { box-shadow: 0 0 0 4px #ffde3b, 0 0 16px #ffde3b; cursor: crosshair; }
 .cell.attack-target .card::after { content: "⚔"; position: absolute; top: 2px; right: 6px; font-size: 16px; }
 .cell.ability-target { cursor: pointer; box-shadow: inset 0 0 0 2px rgba(190,150,255,.8); background: rgba(190,150,255,.15); }

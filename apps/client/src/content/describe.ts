@@ -62,6 +62,11 @@ export function describeEvent(e: GameEvent, view: PlayerView, name: NameFn): Eve
       else if (e.kind === 'curse') msg += `cursed ${showVal(e.target!)}${where} — strength is now ${strength(e.target!) - 1}`;
       return { cls: e.p, log: msg + '.', toast: msg };
     }
+    case 'countdown': {
+      const msg = `⚠️ ${view.rules.quietLimit} quiet moves in a row — final countdown! ` +
+        `The game ends in ${plural(e.moves, 'move')} each. Flips and captures won't stop it.`;
+      return { cls: 'sys', log: msg, toast: msg };
+    }
     case 'scout':
     case 'end':
       return null;
@@ -73,10 +78,9 @@ export function describeResult(r: GameResult, view: PlayerView, name: NameFn): s
     case 'score':
       return `${name(r.winner)} reached ${view.scores[r.winner]} points.`;
     case 'quiet': {
-      const n = view.rules.quietLimit;
       const tie = view.scores.blue === view.scores.red;
-      return `${n} moves in a row without flips or captures. ` +
-        (tie ? `Points are tied — ${name(r.mover!)} made the ${n}th move and lost.` : `More points: ${name(r.winner)}.`);
+      return 'The final countdown is over. ' +
+        (tie ? `Points are tied — ${name(r.mover!)} made the last move and lost.` : `More points: ${name(r.winner)}.`);
     }
     case 'noMoves':
       return `No moves left for ${name(opponent(r.winner))} — defeat.`;

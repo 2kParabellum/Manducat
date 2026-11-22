@@ -31,6 +31,8 @@ export function getPlayerView(state: GameState, viewer: Player | null, opts: Vie
     mines: state.mines.map(m => (allMines ? m : m & BIT[viewer!])),
     cooldown: { ...state.cooldown },
     quiet: { ...state.quiet },
+    countdown: state.countdown,
+    recent: { blue: state.recent.blue.slice(), red: state.recent.red.slice() },
     chars: { ...state.chars },
     result: state.result,
     graveyard: state.graveyard.slice(),
