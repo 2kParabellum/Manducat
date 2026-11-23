@@ -1,6 +1,6 @@
 // Local game: the "truth" lives in the browser, the opponent is a bot or a second person at the same screen.
 import { ABILITIES, applyAction, createGame, getPlayerView, isLegalAction, opponent, randomSeed, redactEvents, resign } from '@manducat/core';
-import type { Action, CharacterId, GameEvent, GameState, PerPlayer, Player } from '@manducat/core';
+import type { Action, CardIdentity, CharacterId, GameEvent, GameState, PerPlayer, Player } from '@manducat/core';
 import { createBot } from '@manducat/ai';
 import type { Bot, Difficulty } from '@manducat/ai';
 import type { GameSession, SessionInfo, SessionUpdate } from './types';
@@ -12,6 +12,12 @@ export interface LocalSetup {
   humanColor?: Player;
   difficulty?: Difficulty;
   seed?: number;
+  /** A fixed layout instead of a random one (tutorial, scripted levels). */
+  layout?: ReadonlyArray<CardIdentity | null>;
+  /** The bot's first moves: its k-th turn plays botScript[k] (if legal), then it thinks on its own. */
+  botScript?: readonly Action[];
+  /** Pause before the bot moves, ms. */
+  botDelayMs?: number;
 }
 
 const BOT_THINK_MS = 350;
@@ -23,9 +29,14 @@ export class LocalSession implements GameSession {
   private listeners = new Set<(u: SessionUpdate) => void>();
   private timer: ReturnType<typeof setTimeout> | null = null;
   private disposed = false;
+  private botTurns = 0;
+  private readonly botScript: readonly Action[];
+  private readonly botDelay: number;
 
   constructor(setup: LocalSetup) {
-    this.state = createGame({ chars: setup.chars, seed: setup.seed ?? randomSeed() });
+    this.state = createGame({ chars: setup.chars, seed: setup.seed ?? randomSeed(), layout: setup.layout });
+    this.botScript = setup.botScript ?? [];
+    this.botDelay = setup.botDelayMs ?? BOT_THINK_MS;
     if (setup.mode === 'ai') {
       const human = setup.humanColor ?? 'blue';
       this.bot = createBot(opponent(human), setup.difficulty ?? 'normal');
@@ -99,9 +110,11 @@ export class LocalSession implements GameSession {
       this.timer = null;
       if (this.disposed || this.state.result) return;
       // TODO: move the search into a Web Worker so Hard doesn't freeze the UI
-      const action = bot.chooseAction(getPlayerView(this.state, bot.player));
+      const scripted = this.botScript[this.botTurns++];
+      const action = scripted && isLegalAction(this.state, bot.player, scripted)
+        ? scripted : bot.chooseAction(getPlayerView(this.state, bot.player));
       this.play(action);
-    }, BOT_THINK_MS);
+    }, this.botDelay);
   }
 
   private clearTimer(): void {

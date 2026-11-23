@@ -2,7 +2,7 @@
 // later it moves to the server (along with achievements and purchases).
 import { CHARACTER_IDS, normalizeDeck } from '@manducat/core';
 import type { CharacterId, Deck } from '@manducat/core';
-import { CAMPAIGN } from '../content/campaign';
+import { CAMPAIGN, TUTORIAL_ID } from '../content/campaign';
 
 export interface Profile {
   unlocked: CharacterId[];
@@ -19,10 +19,13 @@ const fresh = (): Profile => ({ unlocked: ['jack'], deck: normalizeDeck([]), com
 function sanitize(p: Partial<Profile>): Profile {
   const unlocked = CHARACTER_IDS.filter(c => c === 'jack' || p.unlocked?.includes(c));
   const ids = new Set(CAMPAIGN.map(n => n.id));
+  const completed = (p.completed ?? []).filter(id => ids.has(id));
+  // Profiles from before the tutorial existed: whoever already got past it doesn't have to replay it
+  if (completed.length > 0 && !completed.includes(TUTORIAL_ID)) completed.unshift(TUTORIAL_ID);
   return {
     unlocked,
     deck: normalizeDeck(p.deck ?? [], unlocked),
-    completed: (p.completed ?? []).filter(id => ids.has(id)),
+    completed,
     rewards: p.rewards ?? {},
   };
 }

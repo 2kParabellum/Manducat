@@ -27,7 +27,10 @@ export function describeEvent(e: GameEvent, view: PlayerView, name: NameFn): Eve
     case 'flipG':
       return { cls: e.p, log: `${name(e.p)} flipped ${coordName(e.i)}: G! +${e.pts} points.` };
     case 'flipM':
-      return { cls: e.p, log: `${name(e.p)} flipped ${coordName(e.i)}: ${card({ owner: e.owner, value: 'M' })} — goes to ${name(e.owner)}'s hand.` };
+    {
+      const whose = name(e.owner) === 'You' ? 'your' : `${name(e.owner)}'s`;
+      return { cls: e.p, log: `${name(e.p)} flipped ${coordName(e.i)}: ${card({ owner: e.owner, value: 'M' })} — goes to ${whose} hand.` };
+    }
     case 'move':
       return { cls: e.p, log: `${name(e.p)}: ${e.piece.value} ${coordName(e.from)} → ${coordName(e.to)}.` };
     case 'place':

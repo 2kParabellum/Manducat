@@ -32,18 +32,16 @@ export const CAMPAIGN: readonly CampaignNode[] = [
   { id: 'l10', kind: 'level', num: 10, name: 'Endgame', difficulty: 'hard', bestOf: 5, deck: ['defender', 'witch', 'miner'] },
 ];
 
-export type NodeState = 'done' | 'current' | 'locked' | 'soon';
+export type NodeState = 'done' | 'current' | 'locked';
 
-/** The tutorial is not made yet: it is shown but doesn't block the route. */
-const isPlayable = (n: CampaignNode): boolean => n.kind !== 'tutorial';
+export const TUTORIAL_ID = 'tutorial';
 
-/** The first node the player hasn't completed yet (null — campaign finished). */
+/** The first node the player hasn't completed yet (null — campaign finished). The tutorial comes first. */
 export function currentNode(completed: readonly string[]): CampaignNode | null {
-  return CAMPAIGN.find(n => isPlayable(n) && !completed.includes(n.id)) ?? null;
+  return CAMPAIGN.find(n => !completed.includes(n.id)) ?? null;
 }
 
 export function nodeState(n: CampaignNode, completed: readonly string[]): NodeState {
-  if (!isPlayable(n)) return 'soon';
   if (completed.includes(n.id)) return 'done';
   return currentNode(completed) === n ? 'current' : 'locked';
 }
