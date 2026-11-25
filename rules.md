@@ -53,15 +53,15 @@ On your turn you do exactly one action:
 
 - Using an ability takes your whole turn and counts as a quiet move.
 - An ability is ready at the start of the game. After use it can be used again only **15 own turns later**.
-- Timed effects (poison, shield, stone) last **5 opponent turns**; Runner's haste lasts **5 own turns**.
+- Timed effects (poison, shield, stone) last **5 opponent turns**; Runner's haste lasts **5 own turns**; Witch's curse lasts **5 turns of the cursed card's owner**.
 
 | Character | Ability |
 |---|---|
 | **Jack** | No ability — the classic game. |
 | **Scout** | Secretly peeks at a 2×2 area: sees the face-down cards there and mines on empty cells. The opponent only learns that Scout was used, not where. (In the UI the peek lasts 3 seconds — then you must remember it.) |
 | **Poisoner** | Poisons one of **your own** face-up cards. Whoever captures it dies right after the capture: the attacker still scores the victim, and the Poisoner scores the attacker's full value. A shield does not save the attacker. |
-| **Witch** | Curses an **enemy** face-up card: −1 to its strength and points. Stacks. Not on M, not on cards with strength 1. The curse is lifted when that card captures something. A 1 still beats a cursed 8. |
-| **Miner** | Secretly mines an empty cell (only the Miner sees it). Any card that enters the cell (move or placing M) explodes and is removed; the mine is used up. If it was an enemy mine, the mine's owner scores the card's value; stepping on your own mine kills your card with no points. Shields don't help. |
+| **Witch** | Curses an **enemy** face-up card: −1 to its strength and points for **5 turns of the card's owner**, then the curse is gone. Capturing does **not** lift it. A cursed card can't be cursed again. Not on M, not on 1s. A 1 still beats a cursed 8. |
+| **Miner** | Secretly mines an empty cell (only the Miner sees it). Any card that enters the cell (move or placing M) explodes and is removed; the mine is used up. If it was an enemy mine, the mine's owner scores the card's value. If your own card blows up on your own mine, you **lose** the card's value in points (not below 0). Shields don't help. |
 | **Defender** | Shields one of **your own** face-up cards. The shield reflects one attack: the attacker stays in place, nothing is captured, and the shield breaks. Poison and mines go through the shield. |
 | **Swapper** | Swaps two orthogonally adjacent cards: yours, the opponent's or face-down ones (face-down cards are not revealed). Effects (curse, poison, shield, haste) travel with the cards. Stone cards can't be swapped. Both cells are occupied, so mines never trigger. |
 | **Runner** | Hastes one of **your own** face-up cards for **5 own turns**. While hasted, the card may move to any empty cell reachable along a free orthogonal path (any distance). Mines on the way don't matter — only a mine in the cell where it stops. A run can't end with an attack. **Any** move or attack by the hasted card uses the haste up. |

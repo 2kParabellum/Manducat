@@ -38,8 +38,7 @@ export function describeEvent(e: GameEvent, view: PlayerView, name: NameFn): Eve
     case 'capture':
       return {
         cls: e.p,
-        log: `${name(e.p)}: ${e.attacker.value} (${coordName(e.from)}) captured ${showVal(e.victim)} on ${coordName(e.to)}. +${e.pts}.` +
-          (e.uncursed ? ' Curse lifted.' : ''),
+        log: `${name(e.p)}: ${e.attacker.value} (${coordName(e.from)}) captured ${showVal(e.victim)} on ${coordName(e.to)}. +${e.pts}.`,
       };
     case 'poisonKill': {
       const msg = `☠️ Poison! ${card(e.piece)} dies. +${e.pts} to ${name(opponent(e.piece.owner))}.`;
@@ -51,7 +50,7 @@ export function describeEvent(e: GameEvent, view: PlayerView, name: NameFn): Eve
     }
     case 'boom': {
       const msg = `💥 Mine on ${coordName(e.i)}! ${card(e.piece)} dies` +
-        (e.pts ? `. +${e.pts} to ${name(e.by)}.` : ' on its own mine.');
+        (e.pts ? `. +${e.pts} to ${name(e.by)}.` : ` on its own mine${e.lost ? ` — ${name(e.by)} loses ${plural(e.lost, 'point')}` : ''}.`);
       return { cls: e.by, log: msg, toast: msg };
     }
     case 'ability': {
@@ -62,7 +61,7 @@ export function describeEvent(e: GameEvent, view: PlayerView, name: NameFn): Eve
       else if (e.kind === 'mine') msg += 'mined a cell';
       else if (e.kind === 'poison') msg += `poisoned ${e.target!.value}${where}`;
       else if (e.kind === 'shield') msg += `shielded ${e.target!.value}${where}`;
-      else if (e.kind === 'curse') msg += `cursed ${showVal(e.target!)}${where} — strength is now ${strength(e.target!) - 1}`;
+      else if (e.kind === 'curse') msg += `cursed ${showVal(e.target!)}${where} — strength is now ${strength(e.target!) - 1} for ${plural(view.rules.effectTurns, 'turn')}`;
       else if (e.kind === 'swap') msg += `swapped ${coordName(e.i!)} and ${coordName(e.j!)}`;
       else if (e.kind === 'haste') msg += `hasted ${e.target!.value}${where} — it may run along a free path`;
       else if (e.kind === 'summon') msg += `summoned a 3${where}`;

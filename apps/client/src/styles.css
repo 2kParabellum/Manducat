@@ -309,6 +309,8 @@ body {
 .bar.haste i.on { background: #ffd34d; }
 .bar.stone { top: 24px; }
 .bar.stone i.on { background: #b9b2a6; }
+.bar.curse { bottom: 19px; }
+.bar.curse i.on { background: #b06cf0; }
 .card.hasted { box-shadow: 0 0 0 3px #ffd34d inset; }
 .card.stoned { box-shadow: 0 0 0 3px #b9b2a6 inset; filter: grayscale(.6); }
 
@@ -476,6 +478,7 @@ body {
   .bar.shield { bottom: 8px; }
   .bar.haste { top: 13px; }
   .bar.stone { top: 17px; }
+  .bar.curse { bottom: 13px; }
   .badge.haste, .badge.stone { bottom: 13px; }
   .mine { font-size: 20px; padding: 3px; }
   .fx { font-size: 32px; }

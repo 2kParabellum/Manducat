@@ -28,13 +28,13 @@ export const CHARACTER_INFO: Readonly<Record<CharacterId, CharacterInfo>> = {
   },
   witch: {
     name: 'Witch', icon: '🔮', verb: 'Curse',
-    hint: 'Choose an enemy card to curse (not 1 or M)',
-    desc: () => 'Lowers an enemy card\'s strength and points by 1 (stacks). The curse is lifted when the card captures. Not on 1 or M. A 1 still beats a cursed 8.',
+    hint: 'Choose an enemy card to curse (not 1, M or an already cursed card)',
+    desc: r => `Lowers an enemy card\'s strength and points by 1 for ${r.effectTurns} of its owner\'s turns. Capturing doesn\'t lift it. A cursed card can\'t be cursed again. Not on 1 or M. A 1 still beats a cursed 8.`,
   },
   miner: {
     name: 'Miner', icon: '💣', verb: 'Mine',
     hint: 'Choose an empty cell to mine',
-    desc: () => 'Mines an empty cell. Only the Miner sees it. Any piece that steps on it dies (single use). Shields don\'t help.',
+    desc: () => 'Mines an empty cell. Only the Miner sees it. Any piece that steps on it dies (single use); an enemy piece gives you its points, your own piece costs you its points. Shields don\'t help.',
   },
   defender: {
     name: 'Defender', icon: '🛡️', verb: 'Shield',

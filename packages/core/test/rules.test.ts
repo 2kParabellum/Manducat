@@ -74,21 +74,34 @@ describe('curse', () => {
     expect(canBeat(P('red', '5', { curse: 1 }), P('blue', '5'))).toBe(false);
   });
 
-  it('stacks: an 8 with two curses is worth 6 points', () => {
-    const g = game({ 0: P('blue', '8'), 2: P('red', '8', { curse: 2 }) });
+  it('is not lifted when the cursed card captures', () => {
+    const g = game({ 0: P('blue', '5', { curse: 1, curseTurns: 3 }), 2: P('red', '2') });
     applyRaw(g, { type: 'attack', from: 0, to: 2 });
-    expect(g.scores.blue).toBe(6);
+    expect(g.board[2]).toMatchObject({ value: '5', curse: 1 });
   });
 
-  it('is lifted when the cursed card captures', () => {
-    const g = game({ 0: P('blue', '5', { curse: 2 }), 2: P('red', '2') });
-    applyRaw(g, { type: 'attack', from: 0, to: 2 });
-    expect(g.board[2]).toMatchObject({ value: '5', curse: 0 });
+  it('lasts 5 turns of the card owner, then is gone', () => {
+    const g = game({ 0: P('blue', '3'), 35: P('red', '8') }, { chars: { blue: 'witch', red: 'jack' } });
+    applyRaw(g, { type: 'ability', kind: 'curse', i: 35 });
+    const left: number[] = [];
+    for (let k = 0; k < 5; k++) {
+      applyRaw(g, shuffleMove(g));   // red's turn
+      const c = (g.board[35] ?? g.board[34]) as Piece;
+      left.push(c.curse ? c.curseTurns! : 0);
+      applyRaw(g, shuffleMove(g));
+    }
+    expect(left).toEqual([4, 3, 2, 1, 0]);
+  });
+
+  it('a cursed card cannot be cursed again', () => {
+    const g = game({ 0: P('blue', '3'), 4: P('red', '8', { curse: 1, curseTurns: 2 }), 5: P('red', '5') },
+      { chars: { blue: 'witch', red: 'jack' } });
+    expect(abilityTargets(g, 'blue')).toEqual([5]);
   });
 
   it('cannot target strength 1 or M', () => {
     const g = game(
-      { 0: P('blue', '3'), 1: P('red', '2', { curse: 1 }), 2: P('red', '1'), 3: P('red', 'M'), 4: P('red', '8') },
+      { 0: P('blue', '3'), 2: P('red', '1'), 3: P('red', 'M'), 4: P('red', '8') },
       { chars: { blue: 'witch', red: 'jack' } },
     );
     expect(abilityTargets(g, 'blue')).toEqual([4]);
@@ -107,12 +120,20 @@ describe('mines', () => {
     expect(g.mines[1]).toBe(0);
   });
 
-  it('own piece blows up too, shield does not help, no points', () => {
-    const g = game({ 0: P('blue', '5', { shield: 5 }) });
+  it('own piece blows up too, shield does not help, the owner loses its points', () => {
+    const g = game({ 0: P('blue', '5', { shield: 5 }) }, { scores: { blue: 7, red: 4 } });
+    g.mines[1] = BIT.blue;
+    const ev = applyRaw(g, { type: 'move', from: 0, to: 1 });
+    expect(g.board[1]).toBeNull();
+    expect(g.scores).toEqual({ blue: 2, red: 4 });
+    expect(ev).toContainEqual(expect.objectContaining({ t: 'boom', by: 'blue', pts: 0, lost: 5 }));
+  });
+
+  it('own mine damage does not go below 0', () => {
+    const g = game({ 0: P('blue', '8') }, { scores: { blue: 3, red: 0 } });
     g.mines[1] = BIT.blue;
     applyRaw(g, { type: 'move', from: 0, to: 1 });
-    expect(g.board[1]).toBeNull();
-    expect(g.scores).toEqual({ blue: 0, red: 0 });
+    expect(g.scores.blue).toBe(0);
   });
 
   it('a placed M blows up', () => {

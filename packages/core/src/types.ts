@@ -26,8 +26,10 @@ export interface Piece {
   readonly faceUp: true;
   readonly owner: Player;
   readonly value: UnitValue;
-  /** Number of curses (minus to strength and points). */
+  /** Curse: minus to strength and points (0 or 1 — a cursed card can't be cursed again). */
   readonly curse?: number;
+  /** Owner's turns left on the curse; when it runs out the curse is gone. Capturing doesn't lift it. */
+  readonly curseTurns?: number;
   /** Opponent turns left on the poison. */
   readonly poison?: number;
   /** Opponent turns left on the shield. */
@@ -143,10 +145,11 @@ export type GameEvent =
   | { t: 'flipM'; p: Player; i: number; owner: Player }
   | { t: 'move'; p: Player; from: number; to: number; piece: Piece }
   | { t: 'place'; p: Player; i: number }
-  | { t: 'capture'; p: Player; from: number; to: number; attacker: Piece; victim: Piece; pts: number; uncursed: boolean }
+  | { t: 'capture'; p: Player; from: number; to: number; attacker: Piece; victim: Piece; pts: number }
   | { t: 'poisonKill'; p: Player; i: number; piece: Piece; pts: number }
   | { t: 'reflect'; p: Player; from: number; to: number; attacker: Piece; victim: Piece }
-  | { t: 'boom'; p: Player; i: number; piece: Piece; pts: number; by: Player }
+  /** by — whose mine it was; pts — points the enemy miner scored; lost — points the owner lost on their own mine. */
+  | { t: 'boom'; p: Player; i: number; piece: Piece; pts: number; by: Player; lost?: number }
   /** i and target are absent if the ability is secret (scout, mine) and the opponent sees the event. */
   /** j — second cell of a swap; pts — points taken by the Avenger's strike. */
   | { t: 'ability'; p: Player; kind: AbilityId; i?: number; j?: number; target?: Piece; pts?: number }

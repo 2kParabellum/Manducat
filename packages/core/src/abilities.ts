@@ -83,11 +83,11 @@ export const ABILITIES: Readonly<Record<AbilityId, AbilityDef>> = {
   curse: {
     id: 'curse',
     secret: false,
-    // Not on M and not on strength-1 cards (including ones already cursed down to 1)
-    targets: (g, p) => openOf(g, opponent(p), c => c.value !== 'M' && strength(c) > 1),
+    // Not on M, not on 1s, not on a card that is already cursed
+    targets: (g, p) => openOf(g, opponent(p), c => c.value !== 'M' && strength(c) > 1 && !c.curse),
     apply(g, p, i, ev) {
-      const c = g.board[i] as Piece;
-      const target = setPiece(g, i, { curse: (c.curse ?? 0) + 1 });
+      // Lasts effectTurns turns of the card's owner
+      const target = setPiece(g, i, { curse: 1, curseTurns: g.rules.effectTurns });
       ev.push({ t: 'ability', p, kind: 'curse', i, target });
     },
   },

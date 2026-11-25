@@ -114,9 +114,8 @@ export function applyRaw(g: GameCore, a: Action, ctx: ApplyContext = {}): GameEv
       g.scores[p] += pts;
       bury(g, vic);
       b[a.from] = null;
-      // It captured: the curse is lifted; an attack also uses up haste
-      const moved: Piece = att.curse || att.haste ? { ...att, curse: 0, haste: 0 } : att;
-      ev.push({ t: 'capture', p, from: a.from, to: a.to, attacker: att, victim: vic, pts, uncursed: !!att.curse });
+      const moved: Piece = att.haste ? { ...att, haste: 0 } : att;   // an attack uses up haste
+      ev.push({ t: 'capture', p, from: a.from, to: a.to, attacker: att, victim: vic, pts });
       if (vic.poison) {   // captured a poisoned card — dies itself (a shield doesn't help)
         b[a.to] = null;
         const pp = piecePoints(moved, R);
@@ -143,7 +142,7 @@ export function applyRaw(g: GameCore, a: Action, ctx: ApplyContext = {}): GameEv
   if (g.cooldown[p] > 0) g.cooldown[p]--;
 
   // Poison, shield and stone on the opponent's pieces count down the opponent's turns;
-  // haste on the player's own pieces counts down their own turns (not on the turn it was given)
+  // haste and curse on the player's own pieces count down their own turns (haste — not on the turn it was given)
   const justHasted = a.type === 'ability' && a.kind === 'haste';
   for (let i = 0; i < b.length; i++) {
     const c = b[i];
@@ -152,8 +151,12 @@ export function applyRaw(g: GameCore, a: Action, ctx: ApplyContext = {}): GameEv
       b[i] = {
         ...c, poison: c.poison ? c.poison - 1 : 0, shield: c.shield ? c.shield - 1 : 0, stone: c.stone ? c.stone - 1 : 0,
       };
-    } else if (c.owner === p && c.haste && !justHasted) {
-      b[i] = { ...c, haste: c.haste - 1 };
+    } else if (c.owner === p && ((c.haste && !justHasted) || c.curseTurns)) {
+      const curseTurns = c.curseTurns ? c.curseTurns - 1 : 0;
+      b[i] = {
+        ...c, haste: c.haste && !justHasted ? c.haste - 1 : c.haste,
+        curseTurns, curse: curseTurns > 0 ? c.curse : 0,
+      };
     }
   }
 

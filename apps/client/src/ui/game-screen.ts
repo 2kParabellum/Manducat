@@ -553,7 +553,7 @@ function guideTargets(a: Action, sel: Selection | null): number[] {
 // ---------- card elements ----------
 
 function pieceSig(c: Piece): string {
-  return c.owner + c.value + 'c' + (c.curse ?? 0) + 'p' + (c.poison ?? 0) + 's' + (c.shield ?? 0) +
+  return c.owner + c.value + 'c' + (c.curse ?? 0) + 'p' + (c.poison ?? 0) + 's' + (c.shield ?? 0) + 'k' + (c.curseTurns ?? 0) +
     'h' + (c.haste ?? 0) + 'x' + (c.stone ?? 0) + (c.summoned ? 'z' : '');
 }
 
@@ -585,6 +585,7 @@ function makeCardEl(card: Piece, effectTurns: number, gold = false): HTMLDivElem
   if (card.curse) {
     el.classList.add('cursed');
     el.insertAdjacentHTML('beforeend', `<span class="orig">${card.value}</span><span class="badge curse">−${card.curse}</span>`);
+    if (card.curseTurns) el.appendChild(makeBar('curse', card.curseTurns, effectTurns));
   }
   if (card.poison) {
     el.classList.add('poisoned');

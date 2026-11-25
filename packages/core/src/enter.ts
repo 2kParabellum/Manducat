@@ -22,11 +22,15 @@ export function enterCell(g: GameCore, p: Player, i: number, piece: Piece, ctx: 
   if (!m && !ctx.forceMine) { g.board[i] = piece; return false; }
   const enemy = opponent(piece.owner);
   const enemyMine = !!ctx.forceMine || (m & BIT[enemy]) !== 0;
-  const pts = enemyMine ? piecePoints(piece, g.rules) : 0;   // nobody scores for stepping on their own mine
+  const value = piecePoints(piece, g.rules);
+  // An enemy mine: its owner scores the card. Your own mine: you lose the card's value (not below 0).
+  const pts = enemyMine ? value : 0;
+  const lost = enemyMine ? 0 : Math.min(value, g.scores[piece.owner]);
   if (enemyMine) g.scores[enemy] += pts;
+  else g.scores[piece.owner] -= lost;
   if (m) { g.mines = g.mines.slice(); g.mines[i] = 0; }
   g.board[i] = null;
   bury(g, piece);
-  ev.push({ t: 'boom', p, i, piece, pts, by: enemyMine ? enemy : piece.owner });
+  ev.push(enemyMine ? { t: 'boom', p, i, piece, pts, by: enemy } : { t: 'boom', p, i, piece, pts, by: piece.owner, lost });
   return true;
 }
